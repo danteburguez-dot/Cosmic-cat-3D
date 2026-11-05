@@ -81,6 +81,11 @@ static void moveWithCollisions(float &x,float &y,float dx,float dy,float radius)
  if(!blocked(nx,y,radius))x=nx;
  if(!blocked(x,ny,radius))y=ny;
 }
+// La pieza del cohete aparece en un nivel elegido al azar por planeta y en
+// una posición aleatoria del mapa. Se guarda el nivel asignado por planeta.
+static int pieceLevel[8]={-1,-1,-1,-1,-1,-1,-1,-1};
+static int pieceX[8]={0,0,0,0,0,0,0,0};
+static int pieceY[8]={0,0,0,0,0,0,0,0};
 void set_campaign(int p,int l,int d){planet=p<0?0:p>7?7:p;level=l<1?1:l>10?10:l;diff=d<0?0:d>2?2:d;}
 void add_pickup(int type,float x,float y){if(pickupCount>=32)return;Pickup &p=pickups[pickupCount++];p.x=x;p.y=y;for(int tries=0;tries<80&&blocked(p.x,p.y,35.f);tries++){p.x=cap(p.x+175.f,50.f,7950.f);p.y=cap(p.y+127.f,50.f,2550.f);}p.type=type;p.alive=1;}
 void start_level(int p,int l,int d){set_campaign(p,l,d);rng=12345u+planet*111199u+level*7981u+diff*9001u;enemyCount=target_kills();pickupCount=0;kills=0;phase=0;gameOver=0;tick=0;ammoTime=0;jetTick=0;invul=0;attackCooldown=0;shotCooldown=0;
@@ -88,7 +93,13 @@ void start_level(int p,int l,int d){set_campaign(p,l,d);rng=12345u+planet*111199
  for(int i=0;i<enemyCount;i++)enemySpawn(i,0);
  int meds=diff==0?1:diff==1?3:10;for(int i=0;i<meds;i++)add_pickup(0,500+nextR()%7000,150+nextR()%2250);
  if(gas())for(int i=0;i<6;i++)add_pickup(1,700+i*1120,250+nextR()%2080);
- if(!(parts&(1<<planet)))add_pickup(2,6100,1100); // Una pieza única por planeta; se puede encontrar en cualquier nivel hasta recogerla.
+ if(!(parts&(1<<planet))){ // Pieza única por planeta en un nivel aleatorio del 1 al 10.
+  if(pieceLevel[planet]<1){
+   nextR();pieceLevel[planet]=1+int(nextR()%10u);
+   pieceX[planet]=350+int(nextR()%7240u);pieceY[planet]=140+int(nextR()%2330u);
+  }
+  if(level==pieceLevel[planet])add_pickup(2,float(pieceX[planet]),float(pieceY[planet]));
+ }
 }
 int upgrade_stat(int i){if(i<0||i>=6||upgrades[i]>=10||stars<=0)return 0;upgrades[i]++;stars--;return 1;}
 void restore_meta(int s,int part,int c0,int c1,int c2,int c3,int c4,int c5,int c6,int c7,int a,int b,int c,int d,int e,int f,int sec){stars=s<0?0:s;parts=part;int cc[8]={c0,c1,c2,c3,c4,c5,c6,c7};for(int i=0;i<8;i++)completed[i]=cc[i];int uu[6]={a,b,c,d,e,f};for(int i=0;i<6;i++)upgrades[i]=uu[i]<1?1:uu[i]>10?10:uu[i];elapsed=sec<0?0:sec;}
