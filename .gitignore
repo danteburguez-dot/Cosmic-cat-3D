@@ -1,6 +1,0 @@
-desktop/node_modules
-desktop/dist
-android/node_modules
-android/android
-*.exe
-*.apk
