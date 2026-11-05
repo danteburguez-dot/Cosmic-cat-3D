@@ -1,0 +1,15 @@
+{
+  "name": "COSMIC CAT — Aventura espacial 3D",
+  "short_name": "COSMIC CAT",
+  "description": "Aventura espacial 3D con gatos, aliens y planetas.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1020",
+  "theme_color": "#0d1830",
+  "icons": [
+    {"src":"assets/mascota-verde.jpg","sizes":"512x512","type":"image/jpeg","purpose":"any maskable"}
+  ]
+}
