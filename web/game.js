@@ -158,14 +158,6 @@ on('clearSaves',()=>{
   document.querySelectorAll('[data-clear-slot]').forEach(button=>button.onclick=()=>{const slot=button.dataset.clearSlot;if(!confirm(`¿Borrar la partida de la casilla ${slot}?`))return;localStorage.removeItem('cosmic_cpp_save_'+slot);dialog('PARTIDA BORRADA',`<p>Se borró únicamente la partida de la casilla ${slot}.</p><button id="closeClear">ACEPTAR</button>`);$('closeClear').onclick=closeDialog;});
   $('cancelClear').onclick=closeDialog;
 });
-on('installApp',async()=>{
-  if(window.matchMedia('(display-mode: standalone)').matches){alert('COSMIC CAT ya está instalada como aplicación.');return;}
-  const choice=confirm('ACEPTAR = descargar la versión para ANDROID (.apk)\nCANCELAR = versión para WINDOWS (.exe)');
-  let url=null,name=null;
-  if(choice){url='COSMIC-CAT.apk';name='COSMIC-CAT-Android.apk';}
-  else{url='desktop/dist/COSMIC-CAT-1.0.0-Windows.exe';name='COSMIC-CAT-Windows.exe';}
-  const anchor=document.createElement('a');anchor.href=url;anchor.download=name;document.body.appendChild(anchor);anchor.click();anchor.remove();
-});
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 function renderLobby(){
  if(!engine)loadedEngine();
