@@ -140,17 +140,21 @@ function openLoading(callback,label='Cargando nivel 3D...'){
   },100);
 }
 function startIntro(){show('intro');const v=$('introVideo');v.currentTime=0;v.play().catch(()=>finishIntro());}
-function chooseControls(){
-  dialog('¿DÓNDE VAS A JUGAR?','<p class="controlQuestion">Elegí el dispositivo para adaptar los controles.</p><div class="buttonGrid"><button id="controlPC">🖥️ COMPUTADORA</button><button id="controlPhone">📱 TELÉFONO</button></div>');
+function chooseControls(){if(window.CosmicControlMode){setControlMode(window.CosmicControlMode);startIntro();return;}dialog('¿DÓNDE VAS A JUGAR?','<p class="controlQuestion">Elegí el dispositivo para adaptar los controles.</p><div class="buttonGrid"><button id="controlPC">🖥️ COMPUTADORA</button><button id="controlPhone">📱 TELÉFONO</button></div>');
   $('controlPC').onclick=()=>{setControlMode('pc');closeDialog();startIntro();};
   $('controlPhone').onclick=()=>{dialog('¿CÓMO QUERÉS MOVERTE?','<p class="controlQuestion">Elegí tu forma preferida de movimiento.</p><div class="buttonGrid"><button id="controlArrows">⬅️ FLECHITAS</button><button id="controlJoystick">🕹️ JOYSTICK</button></div>');$('controlArrows').onclick=()=>{setControlMode('arrows');closeDialog();startIntro();};$('controlJoystick').onclick=()=>{setControlMode('joystick');closeDialog();startIntro();};};
+}
+function chooseMovementOnly(){
+  dialog('¿CÓMO QUERÉS MOVERTE?','<p class="controlQuestion">Elegí tu forma preferida de movimiento.</p><div class="buttonGrid"><button id="mArrows">⬅️ FLECHITAS</button><button id="mStick">🕹️ JOYSTICK</button></div>');
+  $('mArrows').onclick=()=>{setControlMode('arrows');closeDialog();startIntro();};
+  $('mStick').onclick=()=>{setControlMode('joystick');closeDialog();startIntro();};
 }
 function setControlMode(mode){
   const touch=$('touch');if(!touch)return;
   touch.classList.toggle('joystickMode',mode==='joystick');touch.classList.toggle('phoneMode',mode!=='pc');
 }
 function finishIntro(){const v=$('introVideo');v.pause();openLoading(()=>{loadedEngine();renderLobby();show('lobby')},'Preparando el sistema solar');}
-on('begin',chooseControls);on('skipIntro',finishIntro);$('introVideo').addEventListener('ended',finishIntro);on('resumeSaved',()=>loadSlots(true));
+on('begin',chooseControls);on('skipIntro',finishIntro);$('introVideo').addEventListener('ended',finishIntro);on('resumeSaved',()=>{if(window.CosmicAsPhone&&window.CosmicAsPhone!=='pc'){window.CosmicAsPhone==='arrows'?setControlMode('arrows'):setControlMode('joystick');loadSlots(true);}else loadSlots(true)});
 on('clearSaves',()=>{
   let html='<p>Elegí qué casilla querés borrar. Las demás partidas se conservarán.</p><div class="buttonGrid">';
   for(let i=1;i<=4;i++){let save=null;try{save=JSON.parse(localStorage.getItem('cosmic_cpp_save_'+i)||'null')}catch(_){}const detail=save?`${names[save.planet]||'Partida'} · Nivel ${save.level||1}`:'VACÍA';html+=`<button data-clear-slot="${i}" ${save?'':'disabled'}>🗑 CASILLA ${i}<br><small>${detail}</small></button>`;}
