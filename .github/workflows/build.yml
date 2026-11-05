@@ -1,0 +1,58 @@
+name: Build releases
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Instalar dependencias
+        run: npm install
+      - name: Empaquetar EXE portable
+        run: npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cosmic-cat-windows
+          path: desktop/dist/*.exe
+
+  build-android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Instalar dependencias Capacitor
+        run: |
+          npm install
+          npx cap add android
+          npx cap copy android
+      - name: Compilar APK
+        run: |
+          chmod +x android/gradlew
+          android/gradlew assembleDebug -x lint
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cosmic-cat-android
+          path: android/android/app/build/outputs/apk/debug/*.apk
