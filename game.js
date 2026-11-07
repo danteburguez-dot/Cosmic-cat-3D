@@ -142,19 +142,36 @@ function openLoading(callback,label='Cargando nivel 3D...'){
 function startIntro(){show('intro');const v=$('introVideo');v.currentTime=0;v.play().catch(()=>finishIntro());}
 function chooseControls(){if(window.CosmicControlMode){setControlMode(window.CosmicControlMode);startIntro();return;}dialog('¿DÓNDE VAS A JUGAR?','<p class="controlQuestion">Elegí el dispositivo para adaptar los controles.</p><div class="buttonGrid"><button id="controlPC">🖥️ COMPUTADORA</button><button id="controlPhone">📱 TELÉFONO</button></div>');
   $('controlPC').onclick=()=>{setControlMode('pc');closeDialog();startIntro();};
-  $('controlPhone').onclick=()=>{dialog('¿CÓMO QUERÉS MOVERTE?','<p class="controlQuestion">Elegí tu forma preferida de movimiento.</p><div class="buttonGrid"><button id="controlArrows">⬅️ FLECHITAS</button><button id="controlJoystick">🕹️ JOYSTICK</button></div>');$('controlArrows').onclick=()=>{setControlMode('arrows');closeDialog();startIntro();};$('controlJoystick').onclick=()=>{setControlMode('joystick');closeDialog();startIntro();};};
+  $('controlPhone').onclick=()=>chooseMovementOnly();
 }
-function chooseMovementOnly(){
+function chooseMovementOnly(after){
+  const go=()=>{after?after():startIntro()};
   dialog('¿CÓMO QUERÉS MOVERTE?','<p class="controlQuestion">Elegí tu forma preferida de movimiento.</p><div class="buttonGrid"><button id="mArrows">⬅️ FLECHITAS</button><button id="mStick">🕹️ JOYSTICK</button></div>');
-  $('mArrows').onclick=()=>{setControlMode('arrows');closeDialog();startIntro();};
-  $('mStick').onclick=()=>{setControlMode('joystick');closeDialog();startIntro();};
+  $('mArrows').onclick=()=>{setControlMode('arrows');closeDialog();go()};
+  $('mStick').onclick=()=>{setControlMode('joystick');closeDialog();go()};
 }
+let controlMode='pc';
 function setControlMode(mode){
+  controlMode=mode;
   const touch=$('touch');if(!touch)return;
   touch.classList.toggle('joystickMode',mode==='joystick');touch.classList.toggle('phoneMode',mode!=='pc');
 }
+// En teléfono (flechitas o joystick) el gato mira hacia donde camina:
+// la mira se apunta a la dirección de movimiento mientras avanza.
+function touchAim(mask){
+  if(controlMode==='pc'||!engine)return;
+  if(renderer)renderer.aimOverlay=null;
+  const dx=(mask&2?1:0)-(mask&1?1:0),dy=(mask&8?1:0)-(mask&4?1:0);
+  if(dx||dy)ex('set_aim',ex('hero_x')+dx*320,ex('hero_y')+dy*320);
+}
 function finishIntro(){const v=$('introVideo');v.pause();openLoading(()=>{loadedEngine();renderLobby();show('lobby')},'Preparando el sistema solar');}
 on('begin',chooseControls);on('skipIntro',finishIntro);$('introVideo').addEventListener('ended',finishIntro);on('resumeSaved',()=>{if(window.CosmicAsPhone&&window.CosmicAsPhone!=='pc'){window.CosmicAsPhone==='arrows'?setControlMode('arrows'):setControlMode('joystick');loadSlots(true);}else loadSlots(true)});
+on('downloadGame',()=>{
+  const here=(path,name)=>{const anchor=document.createElement('a');anchor.href=path;anchor.download=name;document.body.appendChild(anchor);anchor.click();anchor.remove();};
+  dialog('DESCARGAR COSMIC CAT','<p>Elegí la versión para tu dispositivo:</p><div class="buttonGrid"><button id="dlWin"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="vertical-align:-2px;margin-right:6px"><path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm0 6.9h7.5v7.2L3 18.5v-6.1Zm8.3-8.2L21 3v8.5h-9.7V4.2Zm0 7.3H21V21l-9.7-1.4v-8.1Z"/></svg><span>WINDOWS (.exe)</span></button><button id="dlApk"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style="vertical-align:-2px;margin-right:6px"><path d="M7.2 2A5.2 5.2 0 0 0 2 7.2c0 1 .3 2 .8 2.9A5.3 5.3 0 0 0 5 16.9a5.3 5.3 0 0 0 8.5 2.3 5.2 5.2 0 0 0 5.6-3 5.3 5.3 0 0 0 2.9-4.7c0-4-3.2-7.2-7.2-7.2h-.1A5.2 5.2 0 0 0 7.2 2Z"/></svg><span>ANDROID (.apk)</span></button></div><p class="info">Windows descarga un RAR con el ejecutable portable. Android descarga un RAR con el APK: descomprimilo e instalalo permitiendo aplicaciones de origen desconocido.</p>');
+  $('dlWin').onclick=()=>{here('windows-max.rar','COSMIC-CAT-Windows.rar');};
+  $('dlApk').onclick=()=>{here('android-max.rar','COSMIC-CAT-Android.rar');};
+});
 on('clearSaves',()=>{
   let html='<p>Elegí qué casilla querés borrar. Las demás partidas se conservarán.</p><div class="buttonGrid">';
   for(let i=1;i<=4;i++){let save=null;try{save=JSON.parse(localStorage.getItem('cosmic_cpp_save_'+i)||'null')}catch(_){}const detail=save?`${names[save.planet]||'Partida'} · Nivel ${save.level||1}`:'VACÍA';html+=`<button data-clear-slot="${i}" ${save?'':'disabled'}>🗑 CASILLA ${i}<br><small>${detail}</small></button>`;}
@@ -298,7 +315,7 @@ const joystick=$('joystick'),joystickKnob=$('joystickKnob');let joystickPointer=
 function updateJoystick(e){if(joystickPointer===null)return;const r=joystick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,max=r.width*.36;let dx=e.clientX-cx,dy=e.clientY-cy;const len=Math.hypot(dx,dy),scale=len>max?max/len:1;dx*=scale;dy*=scale;joystickKnob.style.transform=`translate(${dx}px,${dy}px)`;for(const k of ['left','right','up','down'])touchInput.delete(k);if(Math.abs(dx)>max*.25)touchInput.add(dx<0?'left':'right');if(Math.abs(dy)>max*.25)touchInput.add(dy<0?'up':'down');}
 function releaseJoystick(){joystickPointer=null;joystickKnob.style.transform='translate(0,0)';for(const k of ['left','right','up','down'])touchInput.delete(k);}
 if(joystick){joystick.addEventListener('pointerdown',e=>{e.preventDefault();joystickPointer=e.pointerId;try{joystick.setPointerCapture(e.pointerId)}catch(_){ }updateJoystick(e)});joystick.addEventListener('pointermove',updateJoystick);for(const ev of ['pointerup','pointercancel','lostpointercapture'])joystick.addEventListener(ev,releaseJoystick);}
-function loop(time){if(!playing||screen!=='play')return;requestAnimationFrame(loop);if(paused)return;const dt=Math.min(.08,(time-lastFrame)/1000);lastFrame=time;let iterations=Math.min(4,Math.round(dt*60));aimEngine();const mask=inputMask(),oldEnergy=ex('hero_energy'),oldHp=ex('hero_hp'),oldEnemies=[];for(let i=0;i<ex('enemy_total');i++)oldEnemies[i]=[ex('enemy_x',i),ex('enemy_y',i)];for(let i=0;i<iterations;i++)ex('step',mask);visualAttacks(mask,oldEnergy);soundGameplay(mask,oldHp,oldEnemies);specialGameplay();detectNewPart();frameCount++;if(frameCount%8===0){updateHUD();if(ex('get_phase')!==prevPhase){prevPhase=ex('get_phase');if(prevPhase===2){paused=true;setTimeout(()=>{if(screen==='play'&&$('modal').hidden)levelWon()},200)}}if(ex('get_over')){paused=true;loseGame();}}draw();}
+function loop(time){if(!playing||screen!=='play')return;requestAnimationFrame(loop);if(paused)return;const dt=Math.min(.08,(time-lastFrame)/1000);lastFrame=time;let iterations=Math.min(4,Math.round(dt*60));aimEngine();const mask=inputMask(),oldEnergy=ex('hero_energy'),oldHp=ex('hero_hp'),oldEnemies=[];for(let i=0;i<ex('enemy_total');i++)oldEnemies[i]=[ex('enemy_x',i),ex('enemy_y',i)];touchAim(mask);for(let i=0;i<iterations;i++)ex('step',mask);visualAttacks(mask,oldEnergy);soundGameplay(mask,oldHp,oldEnemies);specialGameplay();detectNewPart();frameCount++;if(frameCount%8===0){updateHUD();if(ex('get_phase')!==prevPhase){prevPhase=ex('get_phase');if(prevPhase===2){paused=true;setTimeout(()=>{if(screen==='play'&&$('modal').hidden)levelWon()},200)}}if(ex('get_over')){paused=true;loseGame();}}draw();}
 function updateHUD(){const hp=Math.ceil(ex('hero_hp')),maxHp=ex('hero_max_hp'),en=Math.ceil(ex('hero_energy')),maxEn=ex('hero_max_energy'),st=Math.ceil(ex('hero_stamina')),maxSt=10+(ex('get_upgrade',4)-1)*3,jp=Math.ceil(ex('hero_jetpack'));$('hudPlanet').textContent=`${names[currentP].toUpperCase()} · NIVEL ${currentL}`;$('hudLifeValue').textContent=`${hp}/${maxHp}`;$('hudEnergyValue').textContent=`${en}/${maxEn}`;$('hudRunValue').textContent=`${st}/${maxSt}`;$('hudLifeBar').style.width=`${Math.max(0,Math.min(100,hp/maxHp*100))}%`;$('hudEnergyBar').style.width=`${Math.max(0,Math.min(100,en/maxEn*100))}%`;$('hudRunBar').style.width=`${Math.max(0,Math.min(100,st/maxSt*100))}%`;$('hudJetWrap').hidden=!gasPlanet(currentP);$('jetBtn').style.display=gasPlanet(currentP)?'':'none';$('hudJetValue').textContent=`${jp}/50`;$('hudJetBar').style.width=`${Math.max(0,Math.min(100,jp/50*100))}%`;$('hudEnemy').textContent=`ALIENS ${ex('total_kills')}/${ex('target_kills')}`;$('levelObjective').textContent=(ex('get_phase')===3?'TODOS DERROTADOS · FALTA PIEZA':(ex('get_parts')&(1<<currentP))?'PIEZA ✓ · DERROTÁ ENEMIGOS':'BUSCÁ PIEZA + DERROTÁ ENEMIGOS');const sec=ex('get_elapsed');$('hudTime').textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`}
 function draw(){
  if(!engine||screen!=='play')return;

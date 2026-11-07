@@ -65,9 +65,9 @@
 @media(max-width:650px){.dashboardSide{grid-template-columns:1fr}.dashboardGrid{padding:12px}.solarPanel{height:570px;padding:18px}.systemMap{inset:90px 0 65px}.orbitPlanet{min-width:57px;font-size:8px;padding:4px}.planetOrb{width:24px;height:24px}.solarFooter{left:12px;right:12px}.solarFooter button{font-size:10px}.dashboardHeader{padding:10px}.dashboardActions{gap:4px}.dashboardActions button{padding:9px;font-size:10px}.dashboardActions>span{padding:8px}.landingCopy{left:6vw;width:87%;top:65%;transform:translateY(-50%)}.landingCopy h1{font-size:clamp(42px,10vw,70px)}.heroArt{top:22%;left:46%;transform:translate(-10%,-50%);width:60vw;opacity:.55}.kicker{margin:12px 0}.introCopy{font-size:13px}.landingBottom{display:none}#aimHint{display:none}}
 
 /* Selector y joystick virtual para partidas en teléfono. */
-#joystick{display:none;width:116px;height:116px;border:2px solid #b8dfd477;border-radius:50%;background:#193b4d99;touch-action:none;align-items:center;justify-content:center;box-shadow:0 0 18px #6dc4bf33}
+#joystick{display:none;width:132px;height:132px;border:2px solid #b8dfd477;border-radius:50%;background:#193b4d99;touch-action:none;align-items:center;justify-content:center;box-shadow:0 0 18px #6dc4bf33;pointer-events:auto;-webkit-user-select:none;user-select:none}
 #joystickKnob{width:48px;height:48px;border-radius:50%;background:#9bcbb5dd;border:2px solid #d7f5dc;box-shadow:0 3px 12px #081b2a99;pointer-events:none}
-#touch.joystickMode #joystick{display:flex}#touch.joystickMode .dpad{display:none}.controlQuestion{text-align:center;margin:4px 0 15px}.landingBtns #clearSaves{font-size:10px;padding:8px 10px;opacity:.78}
+#touch.joystickMode #joystick{display:flex}#touch.joystickMode .dpad{display:none}.controlQuestion{text-align:center;margin:4px 0 15px}.landingBtns #clearSaves{font-size:10px;padding:8px 10px;opacity:.78}.landingBtns #downloadGame{font-size:10px;padding:8px 10px;background:#385d73;border-color:#78c4ce}
 
 /* Paneles de pieza del cohete */
 .piecePanel{position:relative;min-height:360px;border-radius:18px;overflow:hidden;background:#101927;display:flex;align-items:flex-end;justify-content:center;padding:20px}
