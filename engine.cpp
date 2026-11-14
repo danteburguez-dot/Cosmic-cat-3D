@@ -18,12 +18,12 @@ static float cap(float a,float lo,float hi){return a<lo?lo:(a>hi?hi:a);}
 static float dist2(float a,float b,float c,float d){float dx=a-c,dy=b-d;return dx*dx+dy*dy;}
 static int gas(){return planet>=4;}
 static bool blocked(float x,float y,float radius);
-static void enemySpawn(int idx,int type){Enemy &e=enemies[idx];e.x=350+float(nextR()%7240);e.y=140+float(nextR()%2330);for(int tries=0;tries<40 && blocked(e.x,e.y,type?35.f:24.f);tries++){e.x=350+float(nextR()%7240);e.y=140+float(nextR()%2330);}e.type=type;e.alive=1;int bonus=planet*20 + diff*100;
+static void enemySpawn(int idx,int type){Enemy &e=enemies[idx];e.x=350+float(nextR()%15140);e.y=140+float(nextR()%4930);for(int tries=0;tries<60 && blocked(e.x,e.y,type?35.f:24.f);tries++){e.x=350+float(nextR()%15140);e.y=140+float(nextR()%4930);}e.type=type;e.alive=1;int bonus=planet*20 + diff*100;
  e.maxhp=type==1?100+bonus:type==2?200+bonus:10+diff*25+planet*3;e.hp=e.maxhp;}
 int enemy_total(){return enemyCount;}
 int pickup_total(){return pickupCount;}
-int world_w(){return 8000;}
-int world_h(){return 2600;}
+int world_w(){return 16000;}
+int world_h(){return 5200;}
 int current_planet(){return planet;}
 int current_level(){return level;}
 int current_diff(){return diff;}
@@ -47,7 +47,7 @@ float hero_jetpack(){return hero.jetpack;}
 int hero_dir(){return dir;}
 float hero_aim_x(){return aimX;}
 float hero_aim_y(){return aimY;}
-void set_aim(float x,float y){aimX=cap(x,0,8000);aimY=cap(y,0,2600);if(absf(aimX-hero.x)>2)dir=aimX>hero.x?1:-1;}
+void set_aim(float x,float y){aimX=cap(x,0,16000);aimY=cap(y,0,5200);if(absf(aimX-hero.x)>2)dir=aimX>hero.x?1:-1;}
 int enemy_alive(int i){return i>=0&&i<enemyCount?enemies[i].alive:0;}
 float enemy_x(int i){return i>=0&&i<enemyCount?enemies[i].x:0;}
 float enemy_y(int i){return i>=0&&i<enemyCount?enemies[i].y:0;}
@@ -77,7 +77,7 @@ static bool blocked(float x,float y,float radius){
   return false;
 }
 static void moveWithCollisions(float &x,float &y,float dx,float dy,float radius){
- float nx=cap(x+dx,28,7972),ny=cap(y+dy,28,2572);
+ float nx=cap(x+dx,28,15972),ny=cap(y+dy,28,5172);
  if(!blocked(nx,y,radius))x=nx;
  if(!blocked(x,ny,radius))y=ny;
 }
@@ -87,23 +87,23 @@ static int pieceLevel[8]={-1,-1,-1,-1,-1,-1,-1,-1};
 static int pieceX[8]={0,0,0,0,0,0,0,0};
 static int pieceY[8]={0,0,0,0,0,0,0,0};
 void set_campaign(int p,int l,int d){planet=p<0?0:p>7?7:p;level=l<1?1:l>10?10:l;diff=d<0?0:d>2?2:d;}
-void add_pickup(int type,float x,float y){if(pickupCount>=32)return;Pickup &p=pickups[pickupCount++];p.x=x;p.y=y;for(int tries=0;tries<80&&blocked(p.x,p.y,35.f);tries++){p.x=cap(p.x+175.f,50.f,7950.f);p.y=cap(p.y+127.f,50.f,2550.f);}p.type=type;p.alive=1;}
+void add_pickup(int type,float x,float y){if(pickupCount>=32)return;Pickup &p=pickups[pickupCount++];p.x=x;p.y=y;for(int tries=0;tries<80&&blocked(p.x,p.y,35.f);tries++){p.x=cap(p.x+175.f,50.f,15950.f);p.y=cap(p.y+127.f,50.f,5150.f);}p.type=type;p.alive=1;}
 void start_level(int p,int l,int d){set_campaign(p,l,d);rng=12345u+planet*111199u+level*7981u+diff*9001u;enemyCount=target_kills();pickupCount=0;kills=0;phase=0;gameOver=0;tick=0;ammoTime=0;jetTick=0;invul=0;attackCooldown=0;shotCooldown=0;
  hero.x=210;hero.y=1300;hero.hp=hero_max_hp();hero.energy=hero_max_energy();hero.stamina=10+(upgrades[4]-1)*3;hero.jetpack=50;if(blocked(hero.x,hero.y,26.f))moveWithCollisions(hero.x,hero.y,0.f,120.f,26.f);aimX=hero.x+250;aimY=hero.y;
  for(int i=0;i<enemyCount;i++)enemySpawn(i,0);
- int meds=diff==0?1:diff==1?3:10;for(int i=0;i<meds;i++)add_pickup(0,500+nextR()%7000,150+nextR()%2250);
- if(gas())for(int i=0;i<6;i++)add_pickup(1,700+i*1120,250+nextR()%2080);
+ int meds=diff==0?1:diff==1?3:10;for(int i=0;i<meds;i++)add_pickup(0,500+nextR()%15100,150+nextR()%4950);
+ if(gas())for(int i=0;i<6;i++)add_pickup(1,700+i*2240,250+nextR()%4660);
  if(!(parts&(1<<planet))){ // Pieza única por planeta en un nivel aleatorio del 1 al 10.
   if(pieceLevel[planet]<1){
    nextR();pieceLevel[planet]=1+int(nextR()%10u);
-   pieceX[planet]=350+int(nextR()%7240u);pieceY[planet]=140+int(nextR()%2330u);
+   pieceX[planet]=350+int(nextR()%15140u);pieceY[planet]=140+int(nextR()%4930u);
   }
   if(level==pieceLevel[planet])add_pickup(2,float(pieceX[planet]),float(pieceY[planet]));
  }
 }
 int upgrade_stat(int i){if(i<0||i>=6||upgrades[i]>=10||stars<=0)return 0;upgrades[i]++;stars--;return 1;}
 void restore_meta(int s,int part,int c0,int c1,int c2,int c3,int c4,int c5,int c6,int c7,int a,int b,int c,int d,int e,int f,int sec){stars=s<0?0:s;parts=part;int cc[8]={c0,c1,c2,c3,c4,c5,c6,c7};for(int i=0;i<8;i++)completed[i]=cc[i];int uu[6]={a,b,c,d,e,f};for(int i=0;i<6;i++)upgrades[i]=uu[i]<1?1:uu[i]>10?10:uu[i];elapsed=sec<0?0:sec;}
-void restore_position(float x,float y,float hp,float energy,float stamina,float jet){hero.x=cap(x,35,7965);hero.y=cap(y,35,2565);hero.hp=cap(hp,1,hero_max_hp());hero.energy=cap(energy,0,hero_max_energy());hero.stamina=cap(stamina,0,10+(upgrades[4]-1)*3);hero.jetpack=cap(jet,0,50);aimX=hero.x+250;aimY=hero.y;}
+void restore_position(float x,float y,float hp,float energy,float stamina,float jet){hero.x=cap(x,35,15965);hero.y=cap(y,35,5165);hero.hp=cap(hp,1,hero_max_hp());hero.energy=cap(energy,0,hero_max_energy());hero.stamina=cap(stamina,0,10+(upgrades[4]-1)*3);hero.jetpack=cap(jet,0,50);aimX=hero.x+250;aimY=hero.y;}
 // El nivel requiere derrotar a todos los enemigos y poseer la pieza única del planeta.
 static void checkVictory(){
  if(phase!=3)return;
@@ -111,7 +111,7 @@ static void checkVictory(){
  phase=2;
  if(completed[planet]<level)completed[planet]=level;
 }
-void hurt_enemy(int i,float dmg){Enemy &e=enemies[i];if(!e.alive)return;e.hp-=dmg;if(e.hp<=0){e.hp=0;e.alive=0;if(e.type==0){kills++;if(kills>=target_kills()){if(level==5||level==10){phase=1;enemyCount=target_kills()+1;enemySpawn(enemyCount-1,level==5?1:2);enemies[enemyCount-1].x=hero.x+250<7800?hero.x+250:hero.x-250;enemies[enemyCount-1].y=hero.y+80<2550?hero.y+80:hero.y-80;}else{phase=3;checkVictory();}}}else{stars+=e.type==1?1:2;phase=3;checkVictory();}}}
+void hurt_enemy(int i,float dmg){Enemy &e=enemies[i];if(!e.alive)return;e.hp-=dmg;if(e.hp<=0){e.hp=0;e.alive=0;if(e.type==0){kills++;if(kills>=target_kills()){if(level==5||level==10){phase=1;enemyCount=target_kills()+1;enemySpawn(enemyCount-1,level==5?1:2);enemies[enemyCount-1].x=hero.x+250<15700?hero.x+250:hero.x-250;enemies[enemyCount-1].y=hero.y+80<5150?hero.y+80:hero.y-80;}else{phase=3;checkVictory();}}}else{stars+=e.type==1?1:2;phase=3;checkVictory();}}}
 // Entrada por frame ~60 FPS. bits: 1 izq, 2 der, 4 arriba, 8 abajo,16 correr,32 cola,64 disparar,128 mochila.
 void step(int mask){if(gameOver||phase==2)return;tick++;if(tick%60==0){elapsed++;ammoTime++;if(gas()&&(mask&128)&&hero.jetpack>0)hero.jetpack=cap(hero.jetpack-1,0,50);if(ammoTime>=60){hero.energy=hero_max_energy();ammoTime=0;}}if(invul>0)invul--;if(attackCooldown>0)attackCooldown--;if(shotCooldown>0)shotCooldown--;
  float speed=(mask&16)&&hero.stamina>0?5.5f:3.1f+(upgrades[3]-1)*.24f;
