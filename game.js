@@ -37,6 +37,7 @@ window.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'){if(e.button=
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 
 let renderer=null,shownShot=0,shownTail=0,previousEnergy=20,attackShot=0,attackTail=0,lastSporeFired=0;
+let piecePingAt=0,piecePingX=0,piecePingY=0,pieceSeen=false;
 const mini=$('miniMap'),mctx=mini.getContext('2d');
 
 // Sonido procedural: el juego sigue funcionando sin descargar archivos externos.
@@ -306,7 +307,7 @@ function chooseLevel(p){
   $('enterLevel').onclick=()=>{closeDialog();openLoading(()=>beginLevel(currentP,currentL,currentD),'Preparando mapa de '+names[currentP]);};
   update();
 }
-function beginLevel(p,l,d){loadedEngine();initAudio();ex('start_level',p,l,d);currentP=p;currentL=l;currentD=d;cameraX=0;cameraY=0;prevPhase=0;frameCount=0;playing=true;paused=false;keys.clear();touchInput.clear();shownPartsMask=ex('get_parts');mouseButtons.left=false;mouseButtons.right=false;mouseActive=false;audioHeroX=ex('hero_x');audioHeroY=ex('hero_y');audioHeroStepAt=0;audioEnemyX.length=0;audioEnemyY.length=0;audioEnemyStepAt.length=0;specialEnemyAt.length=0;specialEnemyNext.length=0;$('closeModal').hidden=false;show('play');if(!renderer)renderer=new CosmicRenderer3D(canvas,$('fxCanvas'));renderer.heroLastPos=null;renderer.heroAnim=0;renderer.heroMovement=0;renderer.enemyMotion.clear();renderer.previousRenderTime=0;resizeCanvas();draw();updateHUD();lastFrame=performance.now();requestAnimationFrame(loop);}
+function beginLevel(p,l,d){loadedEngine();initAudio();ex('start_level',p,l,d);currentP=p;currentL=l;currentD=d;cameraX=0;cameraY=0;prevPhase=0;frameCount=0;playing=true;paused=false;keys.clear();touchInput.clear();shownPartsMask=ex('get_parts');pieceSeen=false;piecePingAt=0;mouseButtons.left=false;mouseButtons.right=false;mouseActive=false;audioHeroX=ex('hero_x');audioHeroY=ex('hero_y');audioHeroStepAt=0;audioEnemyX.length=0;audioEnemyY.length=0;audioEnemyStepAt.length=0;specialEnemyAt.length=0;specialEnemyNext.length=0;$('closeModal').hidden=false;show('play');if(!renderer)renderer=new CosmicRenderer3D(canvas,$('fxCanvas'));renderer.heroLastPos=null;renderer.heroAnim=0;renderer.heroMovement=0;renderer.enemyMotion.clear();renderer.previousRenderTime=0;resizeCanvas();draw();updateHUD();lastFrame=performance.now();requestAnimationFrame(loop);}
 function positionMiniMap(){const hudH=$('hud').getBoundingClientRect().height;const top=Math.ceil(hudH+41);$('play').style.setProperty('--minimap-map-top',top+'px');$('play').style.setProperty('--minimap-hint-top',(top-25)+'px')}
 function resizeCanvas(){if(renderer)renderer.resize();positionMiniMap();}
 window.addEventListener('resize',()=>{if(screen==='play'){resizeCanvas();draw()}});
@@ -347,7 +348,13 @@ function drawMini(){
  const reveal=ordinaryAlive<=5 || (ex('get_phase')===2 && (currentL===5||currentL===10));
  for(let i=0;i<ex('pickup_total');i++)if(ex('pickup_alive',i)){
    const type=ex('pickup_type',i);
-   if(type===2){hasPiece=true;if(!reveal)continue;}
+   if(type===2){
+    hasPiece=true;
+    const [ppx,ppy]=mapPoint(ex('pickup_x',i),ex('pickup_y',i));
+    piecePingX=ppx;piecePingY=ppy;
+    if(!pieceSeen){pieceSeen=true;piecePingAt=performance.now();}
+    if(!reveal)continue;
+   }
    const [px,py]=mapPoint(ex('pickup_x',i),ex('pickup_y',i));
    if(type===2){
      // Cohete amarillo con pulso luminoso: pieza revelada en el radar.
@@ -360,6 +367,12 @@ function drawMini(){
      mctx.fillRect(px-1.5,py-1.5,3,3);
    }
  }
+ const nowMs=performance.now();
+ if(hasPiece){
+  if(nowMs-piecePingAt>=30000){piecePingAt=nowMs;if(audioCtx&&screen==='play'){soundTone(980,.45,'sine',.045,-430);soundTone(1470,.3,'sine',.03,-400);}}
+  const pt=(nowMs-piecePingAt)/1000;
+  if(pt<2.6){const r=6+(pt/2.6)*52,a=Math.max(0,1-pt/2.6);mctx.strokeStyle='rgba(255,209,106,'+a.toFixed(3)+')';mctx.lineWidth=2;mctx.beginPath();mctx.arc(piecePingX,piecePingY,r,0,Math.PI*2);mctx.stroke();mctx.beginPath();mctx.arc(piecePingX,piecePingY,r*.55,0,Math.PI*2);mctx.stroke();}
+ }else pieceSeen=false;
  const [hx,hy]=mapPoint(ex('hero_x'),ex('hero_y'));
  mctx.fillStyle='#ffe2aa';mctx.beginPath();mctx.arc(hx,hy,4,0,Math.PI*2);mctx.fill();
  const hint=$('miniMapHint');
