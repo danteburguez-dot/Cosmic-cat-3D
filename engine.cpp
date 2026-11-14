@@ -133,13 +133,13 @@ static void checkVictory(){
 }
 void hurt_enemy(int i,float dmg){Enemy &e=enemies[i];if(!e.alive)return;e.hp-=dmg;if(e.hp<=0){e.hp=0;e.alive=0;if(e.type==0||e.type==3){kills++;if(kills>=target_kills()){if(level==5||level==10){phase=1;enemyCount=target_kills()+1;enemySpawn(enemyCount-1,level==5?1:2);enemies[enemyCount-1].x=hero.x+250<15700?hero.x+250:hero.x-250;enemies[enemyCount-1].y=hero.y+80<5150?hero.y+80:hero.y-80;}else{phase=3;checkVictory();}}}else{stars+=e.type==1?1:2;phase=3;checkVictory();}}}
 // Entrada por frame ~60 FPS. bits: 1 izq, 2 der, 4 arriba, 8 abajo,16 correr,32 cola,64 disparar,128 mochila.
-void step(int mask){if(gameOver||phase==2)return;tick++;if(tick%60==0){elapsed++;ammoTime++;if(gas()&&(mask&128)&&hero.jetpack>0)hero.jetpack=cap(hero.jetpack-1,0,50);if(ammoTime>=60){hero.energy=hero_max_energy();ammoTime=0;}if(hero.suit<hero_max_suit()&&tick-lastDamageTick>=180)hero.suit=cap(hero.suit+1.f,0.f,hero_max_suit());}if(invul>0)invul--;if(attackCooldown>0)attackCooldown--;if(shotCooldown>0)shotCooldown--;
+void step(int mask){if(gameOver||phase==2)return;tick++;if(tick%60==0){elapsed++;ammoTime++;if(gas()&&(mask&128)&&hero.jetpack>0)hero.jetpack=cap(hero.jetpack-1,0,50);if(ammoTime>=30){hero.energy=hero_max_energy();ammoTime=0;}if(hero.suit<hero_max_suit()&&tick-lastDamageTick>=180)hero.suit=cap(hero.suit+1.f,0.f,hero_max_suit());}if(invul>0)invul--;if(attackCooldown>0)attackCooldown--;if(shotCooldown>0)shotCooldown--;
  float speed=(mask&16)&&hero.stamina>0?5.5f:3.1f+(upgrades[3]-1)*.24f;
  float dx=(mask&2?1:0)-(mask&1?1:0),dy=(mask&8?1:0)-(mask&4?1:0);
  if(dx!=0||dy!=0){if(dx)dir=dx>0?1:-1;if(dx&&dy)speed*=.7071f;moveWithCollisions(hero.x,hero.y,dx*speed,dy*speed,25.f);}
  if(mask&16&&((dx!=0)||(dy!=0))){if(tick%60==0)hero.stamina=cap(hero.stamina-1,0,10+(upgrades[4]-1)*3);}else if(tick%90==0)hero.stamina=cap(hero.stamina+1,0,10+(upgrades[4]-1)*3);
  if((mask&32)&&attackCooldown==0){attackCooldown=27;for(int i=0;i<enemyCount;i++)if(enemies[i].alive&&dist2(hero.x,hero.y,enemies[i].x,enemies[i].y)<125*125){float ax=aimX-hero.x,ay=aimY-hero.y,ex=enemies[i].x-hero.x,ey=enemies[i].y-hero.y;if(ax*ax+ay*ay<1||ax*ex+ay*ey>0)hurt_enemy(i,7+(upgrades[0]-1)*2);}}
- if((mask&64)&&shotCooldown==0&&hero.energy>=4){shotCooldown=16;hero.energy-=4;float ax=aimX-hero.x,ay=aimY-hero.y,ray2=ax*ax+ay*ay;
+ if((mask&64)&&shotCooldown==0&&hero.energy>=1){shotCooldown=16;hero.energy-=1;float ax=aimX-hero.x,ay=aimY-hero.y,ray2=ax*ax+ay*ay;
   if(ray2>0.001f){float best=9000000.f;int chosen=-1;for(int i=0;i<enemyCount;i++)if(enemies[i].alive){
      float ex=enemies[i].x-hero.x,ey=enemies[i].y-hero.y;
      float u=(ex*ax+ey*ay)/ray2;
