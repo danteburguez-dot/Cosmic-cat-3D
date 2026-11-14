@@ -45,7 +45,7 @@ personajes esculpidos ni mapas artísticos de alta resolución. La lógica
 heredada del juego C++ se mantiene. Si WebGL no se inicia, la pantalla
 mostrará un mensaje en lugar de permanecer negra.
 
-Pantalla de carga: mínimo 30 segundos desde que aparece, sin botones de salto.
+Pantalla de carga: 10 segundos desde que aparece, sin botones de salto.
 
 NUEVO PANEL MEJORAS: seis tarjetas con barra nivel 1-10, iconos y costo de 1 estrella por mejora.
 

@@ -123,7 +123,7 @@ function openLoading(callback,label='Cargando nivel 3D...'){
   message.textContent=label+' 0%';
   try {nyan.pause();nyan.currentTime=0;nyan.play().catch(()=>{});}catch(e){}
   const started=performance.now();
-  const minDuration=30000;
+  const minDuration=10000;
   let completed=false;
   progressTimer=setInterval(()=>{
     if(completed)return;
