@@ -250,7 +250,7 @@
   #touch .actions {max-width:59vw;gap:3px;}
 }
 
-/* Portada compacta para pantallas cortas (teléfono en horizontal): todo dentro de la pantalla, */
+/* Portada compacta para pantallas cortas (telï¿½fono en horizontal): todo dentro de la pantalla, */
 /* sin taparse con la barra de estado ni cortar los botones por abajo. */
 @media(max-height:600px) and (min-width:560px){
   .landingCopy{left:5vw;width:min(52vw,640px);top:50%;transform:translateY(-50%);padding-top:max(env(safe-area-inset-top,0px),4px)}
@@ -294,3 +294,22 @@
   .solarFooter small{font-size:9.5px}
   .solarFooter button{font-size:11px;padding:9px 13px}
 }
+
+/* Panel MisiÃ³n Espacial (reto NASA "Space Mission Design Game") */
+.missionGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+.missionGrid button{min-height:56px;text-align:left;font-size:12px;line-height:1.3}
+.missionGrid button.selected{outline:2px solid #9cbd87;background:#2d4a37}
+.missionCard{border:1px solid #47597a;border-radius:12px;padding:10px 12px;margin:8px 0;background:#152238d9}
+.missionCard p{font-size:11px;margin:6px 0 0;color:#b9c9d9}
+.missionCard button{padding:7px 12px;font-size:13px}
+.missionBar{display:grid;grid-template-columns:100px 1fr auto;gap:8px;align-items:center;font-size:11px;margin:6px 0;color:#c9d7e4}
+.missionTrack{height:8px;background:#0f1722;border:1px solid #3c5170;border-radius:99px;overflow:hidden}
+.missionTrack i{display:block;height:100%;background:#7dc98a}
+.missionIssues{color:#ffc7c7;font-size:12px;margin:8px 0}
+.missionResult{text-align:center;margin:8px 0}
+.missionResult small{color:#9db2c9}
+.missionStars{font-size:26px;letter-spacing:4px;margin:4px 0;color:#ffd66b}
+.missionSteps{display:flex;gap:6px;justify-content:center;font-size:10px;color:#9db2c9;margin:6px 0 10px;flex-wrap:wrap}
+.missionSteps span{padding:3px 8px;border-radius:99px;border:1px solid #3c5170}
+.missionSteps span.done{border-color:#9cbd87;color:#cbe6c0}
+@media(max-height:600px){.missionGrid button{min-height:44px;font-size:11px}}

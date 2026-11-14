@@ -187,7 +187,8 @@ function renderLobby(){
  document.querySelectorAll('[data-planet]').forEach(b=>b.onclick=()=>chooseLevel(+b.dataset.planet));
  const complete=names.map((_,i)=>ex('get_completed',i)),unlocked=Math.min(7,complete.findIndex(v=>v<10)===-1?7:complete.findIndex(v=>v<10));
  const count=bitCount(ex('get_parts'));
- $('lobbyStatus').textContent=`⭐ ${ex('get_stars')} estrellas · 🚀 ${count}/8 piezas`; $('lobbyStars').textContent=`⭐ ${ex('get_stars')} estrellas`;
+ let medal='';try{const m=JSON.parse(localStorage.getItem('cosmic_mission_v1')||'null');if(m&&m.stars)medal=` · 🛰️ misión ${'★'.repeat(m.stars)}`}catch(_){}
+ $('lobbyStatus').textContent=`⭐ ${ex('get_stars')} estrellas · 🚀 ${count}/8 piezas${medal}`; $('lobbyStars').textContent=`⭐ ${ex('get_stars')} estrellas`;
  $('campaignPlanet').textContent=names[unlocked];$('campaignLevel').textContent=`${Math.min(10,complete[unlocked]+1)} / 10`;
  $('campaignRocket').textContent=count===8?'Piezas completas':'Sin ensamblar';$('partsProgress').textContent=count+' de 8';$('partsBar').style.width=count/8*100+'%';
  $('statInitialLife').textContent=80+(ex('get_upgrade',1)-1)*15;$('statTail').textContent=7+(ex('get_upgrade',0)-1)*2;
@@ -453,5 +454,126 @@ function openAppearance(){
 function hslToHex(h,s,l){s/=100;l/=100;const a=s*Math.min(l,1-l);const f=n=>{const k=(n+h/30)%12;const c=l-a*Math.max(-1,Math.min(k-3,9-k,1));return Math.round(255*c).toString(16).padStart(2,'0')};return '#'+f(0)+f(8)+f(4)}
 const CAT_PREVIEW_SVG="<svg viewBox=\"0 0 260 330\" role=\"img\" aria-label=\"Vista previa del gato astronauta\"><g stroke=\"#172b4e\" stroke-width=\"8\" stroke-linejoin=\"round\" stroke-linecap=\"round\"><path d=\"M89 230 Q48 245 52 277 Q61 293 82 270\" fill=\"none\" stroke=\"#b8b9c7\"/><path d=\"M92 191 L163 191 Q193 213 181 281 L78 281 Q67 221 92 191\" fill=\"var(--preview-suit)\"/><path d=\"M84 278 L116 278 115 301 Q93 319 79 296Z\" fill=\"#eef0ee\"/><path d=\"M147 278 L177 278 179 301 Q163 319 145 296Z\" fill=\"#eef0ee\"/><rect x=\"68\" y=\"216\" width=\"23\" height=\"55\" rx=\"11\" fill=\"#a5b4bd\"/><rect x=\"178\" y=\"216\" width=\"23\" height=\"55\" rx=\"11\" fill=\"#a5b4bd\"/><path d=\"M69 73 L79 19 115 54 151 53 190 20 196 79 Q220 115 204 165 Q185 199 130 201 Q75 198 57 160 Q41 120 69 73Z\" fill=\"#efeee8\"/><path d=\"M79 40 L85 72 104 65Z M169 64 L186 41 187 79Z\" stroke=\"#b7a5aa\" fill=\"#d9abb8\"/><ellipse cx=\"99\" cy=\"127\" rx=\"11\" ry=\"15\" fill=\"#172b4e\" stroke=\"none\"/><ellipse cx=\"163\" cy=\"127\" rx=\"11\" ry=\"15\" fill=\"#172b4e\" stroke=\"none\"/><path d=\"M121 151 L140 151 130 163Z\" fill=\"#db939e\" stroke=\"none\"/><path d=\"M130 164 Q117 180 110 166 M130 164 Q140 180 151 166\" fill=\"none\" stroke-width=\"4\"/><ellipse cx=\"131\" cy=\"220\" rx=\"18\" ry=\"19\" fill=\"#b0d4d4\"/><circle cx=\"131\" cy=\"220\" r=\"8\" fill=\"#386d9a\" stroke=\"none\"/></g></svg>";
 on('appearanceBtn',openAppearance);
+// ===== DISEÑADOR DE MISIÓN ESPACIAL =====
+// Basado en los recursos oficiales del reto "Space Mission Design Game" de
+// NASA Space Apps 2026: segmentos de misión (lanzado, espacio, tierra, usuario),
+// niveles de madurez CML 1-4 de JPL, Δv de órbitas estilo GMAT y el flujo
+// objetivo→instrumento del juego de telescopios de NASA/Webb.
+const MISSION_OBJECTIVES=[
+ {id:'earth',name:'Vigilar la Tierra',icon:'🌍',need:500},
+ {id:'space',name:'Observar el universo',icon:'🌌',need:300},
+ {id:'sun',name:'Estudiar el Sol',icon:'☀️',need:400},
+ {id:'mars',name:'Explorar Marte',icon:'🔴',need:900}];
+const MISSION_ORBITS=[
+ {id:'leo',name:'Órbita baja (LEO)',dv:'9,4 km/s',comm:0,cost:0},
+ {id:'polar',name:'LEO polar',dv:'9,7 km/s',comm:100,cost:10},
+ {id:'geo',name:'Geoestacionaria (GEO)',dv:'11,9 km/s',comm:200,cost:30},
+ {id:'inter',name:'Interplanetaria',dv:'14,5 km/s',comm:300,cost:50}];
+const MISSION_VEHICLES=[
+ {id:'small',name:'Lanzador pequeño',cap:1500,cost:55},
+ {id:'medium',name:'Lanzador mediano',cap:4000,cost:110},
+ {id:'heavy',name:'Lanzador superpesado',cap:12000,cost:190}];
+const MISSION_INSTRUMENTS=[
+ {id:'cam',name:'Cámara multiespectral',mass:120,power:350,cost:18,comm:0},
+ {id:'spect',name:'Espectrómetro',mass:260,power:650,cost:40,comm:0},
+ {id:'radar',name:'Radar de imágenes',mass:480,power:1100,cost:65,comm:0},
+ {id:'ir',name:'Telescopio infrarrojo',mass:380,power:820,cost:85,comm:0},
+ {id:'ka',name:'Antena de alta velocidad',mass:90,power:220,cost:25,comm:400},
+ {id:'laser',name:'Comunicación láser',mass:60,power:180,cost:20,comm:600}];
+const MISSION_PANEL={mass:70,power:500,cost:12};
+const MISSION_BUDGET=200;
+let missionState=null;
+function missionTotals(st){
+ let mass=500,power=150,cost=40,comm=300;
+ MISSION_INSTRUMENTS.forEach(i=>{if(st.instruments.has(i.id)){mass+=i.mass;power+=i.power;cost+=i.cost;comm+=i.comm}});
+ const p=Math.min(5,st.panels);mass+=p*MISSION_PANEL.mass;power+=p*MISSION_PANEL.power;cost+=p*MISSION_PANEL.cost;
+ const orb=MISSION_ORBITS.find(o=>o.id===st.orbit),veh=MISSION_VEHICLES.find(v=>v.id===st.vehicle);
+ if(veh)cost+=veh.cost;if(orb)cost+=orb.cost;
+ return {mass,power,cost,comm,orb,veh,panels:p};
+}
+function missionBar(label,val,max,unit){
+ if(!max)return `<div class="missionBar"><span>${label}</span><div class="missionTrack"><i style="width:0%"></i></div><b>—</b></div>`;
+ const p=Math.min(100,val/max*100),ok=val<=max;
+ const color=ok?(val<=max*.85?'#7dc98a':'#e0b45a'):'#e2666b';
+ return `<div class="missionBar"><span>${label}</span><div class="missionTrack"><i style="width:${p}%;background:${color}"></i></div><b>${val} / ${max} ${unit}</b></div>`;
+}
+function missionSteps(st){
+ const names=['Objetivo','Órbita+Lanzador','Instrumentos','Revisión','Lanzamiento'];
+ return `<div class="missionSteps">`+names.map((n,i)=>`<span class="${st.step>i?'done':''}">CML${i+1} · ${n}</span>`).join('')+`</div>`;
+}
+function missionMatch(st){
+ const ins=st.instruments;
+ if(st.obj==='earth'&&ins.has('radar'))return 'NISAR · radar NASA–ISRO';
+ if(st.obj==='earth'&&st.orbit==='polar'&&ins.has('cam'))return 'Landsat';
+ if(st.obj==='space'&&ins.has('ir'))return st.orbit==='geo'?'Telescopio Webb':'SPHEREx';
+ if(st.obj==='mars')return 'Mars Reconnaissance Orbiter';
+ if(st.obj==='sun')return 'Parker Solar Probe';
+ if(st.obj==='earth'&&ins.has('spect'))return 'Sentinel / Landsat';
+ return 'CubeSat de demostración (NASA CSLI)';
+}
+function renderMissionDialog(){
+ const st=missionState;const t=missionTotals(st);
+ const obj=MISSION_OBJECTIVES.find(o=>o.id===st.obj);
+ const need=(obj?obj.need:0)+(t.orb?t.orb.comm:0);
+ const capMax=t.veh?t.veh.cap:0;
+ const gen=t.panels*MISSION_PANEL.power;
+ const problems=[];
+ if(st.step>=3){
+  if(t.veh&&t.mass>t.veh.cap)problems.push(`Masa ${t.mass} kg supera la capacidad ${t.veh.cap} kg del lanzador.`);
+  if(t.power>gen)problems.push('Potencia insuficiente: agregá paneles solares.');
+  if(t.comm<need)problems.push(`Comunicaciones insuficientes: necesitás ${need} y tenés ${t.comm}.`);
+ }
+ if(t.cost>MISSION_BUDGET)problems.push(`Presupuesto excedido: $${t.cost}M de $${MISSION_BUDGET}M.`);
+ let body=missionSteps(st);
+ if(st.step===1){
+  body+=`<p class="controlQuestion">CML1 · Elegí el objetivo científico (segmento de usuario).</p><div class="missionGrid">`+
+   MISSION_OBJECTIVES.map(o=>`<button data-mobj="${o.id}" class="${st.obj===o.id?'selected':''}">${o.icon} ${o.name}<br><small>Comunicación mínima: ${o.need}</small></button>`).join('')+`</div>
+   <div class="missionCard"><b>¿Cómo se diseña una misión?</b><p>Según NASA, toda misión avanza por CML de idea a diseño final y se apoya en 4 segmentos: lanzamiento, espacio, tierra y usuario. Vamos a recorrerlos.</p></div>`;
+ }else if(st.step===2){
+  body+=`<p class="controlQuestion">CML2 · Órbita (Δv) y segmento de lanzamiento.</p><div class="missionGrid">`+
+   MISSION_ORBITS.map(o=>`<button data-morbit="${o.id}" class="${st.orbit===o.id?'selected':''}">🛰️ ${o.name}<br><small>Δv ${o.dv} · Com +${o.comm} · $${o.cost}M</small></button>`).join('')+
+   MISSION_VEHICLES.map(v=>`<button data-mveh="${v.id}" class="${st.veh&&st.veh.id===v.id?'selected':''}">🚀 ${v.name}<br><small>Capacidad ${v.cap} kg · $${v.cost}M</small></button>`).join('')+`</div>`+
+   missionBar('Masa',t.mass,capMax,'kg')+missionBar('Presupuesto',t.cost,MISSION_BUDGET,'M$')+
+   `<div class="missionCard"><button id="mNext" class="primary" style="width:100%">CONTINUAR ▶</button></div>`;
+ }else if(st.step===3){
+  body+=`<p class="controlQuestion">CML3-4 · Instrumentos (segmento espacial) y energía.</p>
+  <div class="missionGrid">`+MISSION_INSTRUMENTS.map(i=>`<button data-mins="${i.id}" class="${st.instruments.has(i.id)?'selected':''}">${i.name}<br><small>${i.mass} kg · ${i.power} W · $${i.cost}M${i.comm?' · Com +'+i.comm:''}</small></button>`).join('')+`</div>
+  <div class="missionCard"><b>Paneles solares:</b> <button id="mPanelMinus">−</button> <b>${t.panels}</b> <button id="mPanelPlus">+</button> <small>(500 W y 70 kg cada uno)</small></div>`+
+  missionBar('Masa',t.mass,capMax,'kg')+missionBar('Potencia',t.power,gen,'W')+
+  `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+   <button id="mBack">◀ ATRÁS</button><button id="mNext" class="primary">REVISAR ▶</button></div>`;
+ }else if(st.step===4){
+  body+=`<p class="controlQuestion">Revisión de ingeniería (punto de diseño).</p>`+
+  missionBar('Masa',t.mass,capMax,'kg')+missionBar('Potencia',t.power,gen,'W')+missionBar('Comunicaciones',t.comm,need,'')+missionBar('Presupuesto',t.cost,MISSION_BUDGET,'M$');
+  if(problems.length)body+=`<div class="missionIssues">`+problems.map(p=>'⚠️ '+p).join('<br>')+`</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="mBack">◀ ATRÁS</button><button id="mFix">AJUSTAR 🔧</button></div>`;
+  else body+=`<div class="missionResult"><b>✅ Diseño viable</b><br><small>Segmentos: lanzamiento ✓ espacio ✓ tierra ✓ usuario ✓</small></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button id="mBack">◀ ATRÁS</button><button id="mLaunch" class="primary">🚀 LANZAR</button></div>`;
+ }else{
+  const ok3=t.veh&&t.mass<=capMax&&t.power<=gen&&t.comm>=need&&t.cost<=MISSION_BUDGET;
+  const ok2=t.veh&&t.mass<=capMax&&t.comm>=need;
+  const stars=ok3?3:(ok2?2:1);
+  const match=missionMatch(st);
+  body+=`<div class="missionResult"><div class="missionStars">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div>
+  <b>¡Misión lanzada!</b><p>Tu diseño se parece a la misión real: <b>${match}</b></p>
+  <small>Potencia ${t.power} W · Masa ${t.mass} kg · Costo $${t.cost}M · Δv ${t.orb?t.orb.dv:'—'}</small>
+  <p><small>CML5 · Operaciones: el segmento de tierra recibe tus datos y el segmento de usuario los analiza. ¡Misión completa!</small></p></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="mAgain">🔁 DISEÑAR OTRA</button><button id="mSave" class="primary">🏅 GUARDAR MEDALLA</button></div>`;
+ }
+ dialog('🛰️ MISIÓN ESPACIAL · DISEÑO Y SIMULACIÓN',body);
+ document.querySelectorAll('[data-mobj]').forEach(b=>b.onclick=()=>{st.obj=b.dataset.mobj;st.step=2;renderMissionDialog();});
+ document.querySelectorAll('[data-morbit]').forEach(b=>b.onclick=()=>{st.orbit=b.dataset.morbit;renderMissionDialog();});
+ document.querySelectorAll('[data-mveh]').forEach(b=>b.onclick=()=>{st.vehicle=b.dataset.mveh;renderMissionDialog();});
+ document.querySelectorAll('[data-mins]').forEach(b=>b.onclick=()=>{const id=b.dataset.mins;st.instruments.has(id)?st.instruments.delete(id):st.instruments.add(id);renderMissionDialog();});
+ if($('mPanelMinus'))$('mPanelMinus').onclick=()=>{st.panels=Math.max(1,st.panels-1);renderMissionDialog();};
+ if($('mPanelPlus'))$('mPanelPlus').onclick=()=>{st.panels=Math.min(5,st.panels+1);renderMissionDialog();};
+ if($('mBack'))$('mBack').onclick=()=>{st.step=Math.max(1,st.step-1);renderMissionDialog();};
+ if($('mNext'))$('mNext').onclick=()=>{if(st.step===1&&!st.obj)return;st.step++;renderMissionDialog();};
+ if($('mFix'))$('mFix').onclick=()=>{st.step=3;renderMissionDialog();};
+ if($('mLaunch'))$('mLaunch').onclick=()=>{st.step=5;renderMissionDialog();};
+ if($('mAgain'))$('mAgain').onclick=openMissionDesigner;
+ if($('mSave'))$('mSave').onclick=()=>{try{localStorage.setItem('cosmic_mission_v1',JSON.stringify({stars:3,match:missionMatch(st)}))}catch(_){}closeDialog();renderLobby();};
+}
+function openMissionDesigner(){missionState={step:1,obj:null,orbit:null,vehicle:null,panels:2,instruments:new Set()};renderMissionDialog();}
+on('missionBtn',openMissionDesigner);
 // Para evitar pantallas negras la aplicación siempre muestra un mensaje de error.
 try{loadedEngine();renderLobby();show('start')}catch(e){crash(e)}

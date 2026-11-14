@@ -79,4 +79,17 @@ MINIMAPA ACTUALIZADO
 - Una sola pieza única por planeta; si no se recoge, puede buscarse en cualquier nivel de ese planeta.
 - El marcador amarillo parpadea cuando se revela; después de recoger la pieza, deja de aparecer.
 
-CONDICIÓN DE VICTORIA: matar todos los aliens y al élite/jefe del nivel (cuando exista), y obtener la pieza única del planeta. En niveles posteriores del mismo planeta cuenta la pieza guardada. Si faltan piezas, el mapa sigue abierto y el minimapa ayuda a encontrarlas.
+CONDICIÓN DE VICTORIA: matar todos los aliens y al élite/jefe del nivel (cuando exista), y obtener la pieza única del planeta. En niveles posteriores del mismo planeta cuenta la pieza guardada. Si faltan piezas, el mapa sigue abierto y el minimapa ayuda a encontrarlas. En niveles posteriores del mismo planeta cuenta la pieza guardada.
+
+MODO MISIÓN ESPACIAL (desde el lobby)
+- Diseñá y simulá una misión completa: objetivo científico, órbita con Δv, lanzador, instrumentos, paneles solares, presupuesto, masa, potencia y comunicaciones.
+- Recorre CML 1-4 (madurez de concepto estilo JPL) y los 4 segmentos de misión de NASA: lanzamiento, espacio, tierra y usuario.
+- Al lanzar, el juego muestra qué misión real de NASA se parece a tu diseño.
+- Guarda una medalla 🛰️ en tu perfil del lobby.
+
+DATOS Y RECURSOS DE NASA UTILIZADOS (Space Apps Challenge 2026 - reto "Space Mission Design Game")
+- NASA: Design and Develop Science Missions (segmentos de misión): https://www.nasa.gov/wp-content/uploads/2025/04/250323-design-and-develop-science-mission.pdf
+- NASA JPL: Concept Maturity Levels (CML 1-4): https://dataverse.jpl.nasa.gov/dataset.xhtml?persistentId=hdl:2014/44299
+- NASA GMAT (Δv y órbitas de referencia): https://software.nasa.gov/software/GSC-19468-1
+- NASA GSFC Mission Design Lab (niveles de estudio y disciplinas): https://etd.gsfc.nasa.gov/capabilities/integrated-design-center/mission-design-lab/
+- NASA Webb "Build It Yourself" (flujo objetivo -> instrumentos): https://science.nasa.gov/mission/webb/game-build-it-yourself/
