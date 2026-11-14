@@ -10,6 +10,7 @@ function saveMiniProfile(p){try{localStorage.setItem('cosmic_mini_v1',JSON.strin
 // ---------- Estado del minijuego ----------
 const M_GUN=[1,0,0,0,0,0,0]; // mejoras temporales del minijuego
 let miniState=null;
+let miniEnemyId=0;
 let miniRenderer=null;
 
 function miniWorldSize(){return {w:3600,h:900};} // pasillo 3D: 3600 x 900
@@ -76,7 +77,7 @@ function spawnMiniEnemy(type){
   let x,y,tries=0;
   do{x=300+Math.random()*(W.w-600);y=80+Math.random()*(W.h-160);tries++;}
   while(Math.hypot(x-st.hero.x,y-st.hero.y)<420&&tries<30);
-  st.enemies.push({x,y,type,hp:(type===3?14:10)*st.enemyHpMul,max:(type===3?14:10)*st.enemyHpMul,cool:60+Math.floor(Math.random()*80)});
+  st.enemies.push({id:miniEnemyId++,x,y,type,hp:(type===3?14:10)*st.enemyHpMul,max:(type===3?14:10)*st.enemyHpMul,cool:60+Math.floor(Math.random()*80)});
 }
 
 // ---------- Arranque del modo supervivencia ----------
@@ -252,21 +253,39 @@ function miniDraw(now){
   const gl=r.gl;const hx=st.hero.x/75,hz=st.hero.y/75;
   const ratio=r.canvas.width/r.canvas.height;
   r.proj=CosmicRenderer3D.perspective(Math.PI/3,ratio,.2,150);
-  const dist=9+(ratio<1?4:0);
-  r.cpos=[hx,dist,hz+dist*.5];r.target=[hx,0,hz];r.view=CosmicRenderer3D.lookAt(r.cpos,r.target);
+  const dist=15.5+(ratio<1?6:0);
+  r.cpos=[hx,dist,hz+dist*.69];r.target=[hx,0,hz-1];r.view=CosmicRenderer3D.lookAt(r.cpos,r.target);
   const fog=['#333842','#564538','#425d56','#6a4c44','#6c6470','#7e7078','#536d84','#364d75'][st.planeta];
   gl.clearColor(...CosmicRenderer3D.rgb(fog),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(r.program);
   gl.uniform3fv(r.uFog,CosmicRenderer3D.rgb(fog));gl.uniformMatrix4fv(r.uView,false,new Float32Array(r.view));gl.uniformMatrix4fv(r.uProj,false,new Float32Array(r.proj));
   // piso del pasillo con columnas de pared a los costados
   const W=st.world,cx=Math.floor(hx/3),cz=Math.floor(hz/3);
-  for(let i=cx-6;i<=cx+6;i++)for(let j=cz-3;j<=cz+3;j++){
+  for(let i=cx-9;i<=cx+9;i++)for(let j=cz-5;j<=cz+5;j++){
     const x=i*3,z=j*3;
     if(x<0||x>W.w||z<0||z>W.h)continue;
     r.draw('cube',x,-.75,z,1.4,.15,1.4,r.colors[st.planeta][0]);
   }
-  for(let j=cz-3;j<=cz+3;j++){const z=j*3;r.draw('cube',0,-.2,z,.8,1.6,1.2,'#3d4a55');r.draw('cube',W.w,-.2,z,.8,1.6,1.2,'#3d4a55');}
-  // personajes
-  for(const e of st.enemies){const ox=e.x/75,oz=e.y/75;if(Math.abs(ox-hx)<24&&Math.abs(oz-hz)<16)r.alien(ox,oz,e.type,now,0,1,Math.hypot(ox-hx,oz-hz),Math.atan2(hx-ox,hz-oz));}
+  for(let j=cz-5;j<=cz+5;j++){const z=j*3;r.draw('cube',0,-.2,z,.8,1.6,1.2,'#3d4a55');r.draw('cube',W.w,-.2,z,.8,1.6,1.2,'#3d4a55');}
+  
+  // Animación de personajes: ciclo de pasos por distancia real, igual que el modo historia
+  const dt=r.previousRenderTime?Math.min(.08,Math.max(0,now-r.previousRenderTime)):0;
+  r.previousRenderTime=now;
+  if(r.heroLastPos){const travel=Math.hypot(hx-r.heroLastPos.x,hz-r.heroLastPos.z);const walking=travel>.004&&travel<3;
+   r.heroAnim+=walking?travel*10:0;
+   r.heroMovement=Math.max(0,Math.min(1,(r.heroMovement||0)+(walking?dt*12:-dt*10)));
+  }else r.heroMovement=0;
+  r.heroLastPos={x:hx,z:hz};
+  const alive=new Set();
+  for(const e of st.enemies){const ox=e.x/75,oz=e.y/75;alive.add(e.id);
+   let em=r.enemyMotion.get(e.id);if(!em){em={x:ox,z:oz,phase:e.id*.83,speed:0,heading:Math.atan2(hx-ox,hz-oz)};r.enemyMotion.set(e.id,em);}
+   const ddx=ox-em.x,ddz=oz-em.z,travel=Math.hypot(ddx,ddz),moving=travel>.0005&&travel<3;
+   em.phase+=moving?travel*(e.type===2?6:e.type===1?8:11):0;
+   em.speed=Math.max(0,Math.min(1,em.speed+(moving?dt*10:-dt*8)));
+   if(moving)em.heading=CosmicRenderer3D.angleLerp(em.heading,Math.atan2(ddx,ddz),Math.min(1,dt*10+0.18));
+   em.x=ox;em.z=oz;
+   if(Math.abs(ox-hx)<26&&Math.abs(oz-hz)<18)r.alien(ox,oz,e.type,now,em.phase,em.speed,Math.hypot(ox-hx,oz-hz),em.heading);
+  }
+  if(r.enemyMotion.size>140)for(const id of r.enemyMotion.keys())if(!alive.has(id))r.enemyMotion.delete(id);
   for(const sp of st.spores){const ox=sp.x/75,oz=sp.y/75;r.draw('sphere',ox,.5,oz,.15,.15,.15,'#8fbf4d');}
-  r.cat(hx,hz,st.hero.dir,st.planeta,now,'#d8d9e1',100,0,st.hero.x+300,st.hero.y,0,0);
+  r.cat(hx,hz,st.hero.dir,st.planeta,now,'#d8d9e1',100,0,st.hero.x+300,st.hero.y,r.heroAnim,r.heroMovement||0);
 }
