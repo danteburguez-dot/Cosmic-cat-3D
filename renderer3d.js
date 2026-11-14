@@ -114,7 +114,7 @@ class CosmicRenderer3D {
   // Escupidor de esporas: púas verdes tipo virus en el lomo y corneta lanzadora.
   if(type===3){
    for(let k=0;k<3;k++)d('cone',x-(.22-.22*k)*mul,.62*mul+bob,z-.15*mul,.09*mul,.2*mul,.09*mul,'#c9d96a',0,.5);
-   d('cone',x,y+.42*mul+bob,z+.42*mul,.10*mul,.16*mul,.10*mul,'#c9d96a',Math.sin(now*3)*.3,1.2);
+   d('cone',x,.42*mul+bob,z+.42*mul,.10*mul,.16*mul,.10*mul,'#c9d96a',Math.sin(now*3)*.3,1.2);
   }
  if(type>0){
   for(let side of [-1,1]){
