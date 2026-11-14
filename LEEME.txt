@@ -1,6 +1,11 @@
 COSMIC CAT — EDICIÓN 3D / MOTOR DE JUEGO C++
 ===========================================
 
+AUTORES Y CONTRIBUCIONES
+- Dante Burguez (Danking091) — idea, diseño y desarrollo del juego.
+- ElpooW — contribuidor del trabajo.
+- Equipo NASA Space Apps Challenge 2026 — reto "Space Mission Design Game".
+
 NOVEDADES
 - Escenario y personajes 3D dibujados con WebGL, sin bibliotecas externas.
 - Animación del sistema solar en la pantalla de inicio y el lobby.
