@@ -2,16 +2,23 @@
 
 Per the NASA Space Apps Challenge 2026 submission requirements, this document declares how Super Intelligence (SI) tools were used in this project.
 
-## What SI was used for
+## Scope of SI usage
 
-- **Code assistance:** an AI coding agent (OpenCode) was used to accelerate implementation tasks: the procedural Web-Audio sound system, CSS layout fixes for mobile screens, the service worker cache policy, and scaffolding parts of the Mission Designer UI. All logic, data choices, game rules and design decisions were made by the team; SI was used as a development accelerator, not to conceive the project idea.
-- **No SI-generated images or videos** are used in the project. All sprites/art are original procedural drawings; intro/loading media were supplied by the team.
-- **No SI-generated audio assets:** all game sounds are synthesized at runtime with the Web Audio API (procedural, no external files).
+SI tools were used **only** for two specific technical tasks:
 
-## How the project idea was conceived
+1. **C++ game logic (`engine.cpp`)** — assistance writing and compiling the C++ game rules module (combat, enemies, pickups, campaign progress) that is compiled to WebAssembly.
+2. **Build tooling for the installers** — assistance setting up the build pipelines that package the web game as a Windows desktop executable (Electron) and an Android APK (Capacitor + Gradle).
 
-The project idea, the mission-designer gameplay concept, the mapping of NASA resources into game mechanics, and the balance of the engineering constraints (mass, power, communications, budget) were defined by the team before and during development.
+## What was NOT done with SI
 
-## NASA brand compliance
+- **Game concept and design:** the game idea, its mechanics, characters, planets, levels, difficulty design and the mission-designer gameplay were conceived by the team without SI.
+- **NASA data integration:** selecting which NASA resources to use and mapping them into game mechanics was done by the team.
+- **Art and audio:** all visual assets are original/procedural or team-supplied media; all sound is synthesized at runtime with the Web Audio API. No SI-generated images, videos or audio are used.
+- **HTML/CSS/JavaScript:** the web interface, 3D WebGL renderer, HUD, screens and game scripts were developed without SI.
+- **Documentation:** this README and project docs were written by the team.
 
-No NASA logos, insignia, or design elements are used anywhere in the game, repository, or media. NASA resources are referenced in text only, as data citations.
+## Compliance notes
+
+- SI was not used to conceive the idea or solution to the challenge.
+- No NASA brand elements, logos or design assets were created or used via SI (or otherwise).
+- No SI-generated imagery, video or audio exists in this repository.

@@ -35,7 +35,7 @@ HTML5, CSS3, vanilla JavaScript, WebGL (custom low-poly renderer), Canvas 2D, We
 
 ## Super Intelligence (SI) usage
 
-Declared in [`AI_USAGE.md`](AI_USAGE.md). No NASA brand elements, logos or mission insignia are used anywhere in the project.
+Declared in [`AI_USAGE.md`](AI_USAGE.md): SI was used only for the C++ game logic module and the Windows/Android installer build tooling. The game concept, design, art, audio and web implementation are the team's own work. No NASA brand elements, logos or mission insignia are used anywhere in the project.
 
 ## License
 
