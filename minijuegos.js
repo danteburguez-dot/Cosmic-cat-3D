@@ -162,21 +162,22 @@ function damageMini(d){
 // ---------- HUD del minijuego (igual estética que el modo historia) ----------
 function updateMiniHud(){
   const st=miniState;
-  $('mLifeVal').textContent=Math.max(0,Math.ceil(st.hp))+'/'+st.maxHp;
-  $('mLifeBar').style.width=Math.max(0,Math.min(100,st.hp/st.maxHp*100))+'%';
-  $('mSuitVal').textContent=Math.ceil(st.escudo)+'/'+st.maxEscudo;
-  $('mSuitBar').style.width=Math.max(0,Math.min(100,st.escudo/st.maxEscudo*100))+'%';
-  $('miniKills').textContent=t('aliens')+' '+st.kills+'/'+(st.modo==='oleada'?st.oleadaKills*st.oleada:st.kills);
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('mLifeVal',Math.max(0,Math.ceil(st.hp))+'/'+st.maxHp);
+  const lb=document.getElementById('mLifeBar');if(lb)lb.style.width=Math.max(0,Math.min(100,st.hp/st.maxHp*100))+'%';
+  set('mSuitVal',Math.ceil(st.escudo)+'/'+st.maxEscudo);
+  const sb=document.getElementById('mSuitBar');if(sb)sb.style.width=Math.max(0,Math.min(100,st.escudo/st.maxEscudo*100))+'%';
+  set('miniKills',t('aliens')+' '+st.kills+'/'+(st.modo==='oleada'?st.oleadaKills*st.oleada:st.kills));
   if(st.modo==='supervivencia'){
     const rest=Math.max(0,1200-st.seg);
-    $('miniTimer').textContent=String(Math.floor(rest/60)).padStart(2,'0')+':'+String(Math.floor(rest%60)).padStart(2,'0');
-    $('miniXp').style.width=Math.min(100,st.xp/st.xpNext*100)+'%';
-    $('miniWave').textContent=t('xpNivel')+' '+st.xpNivel+' · '+t('muertes')+' '+st.kills;
-    $('miniObj').textContent=(st.jefeSalido?t('jefeLlego'):t('aguantar'));
+    set('miniTimer',String(Math.floor(rest/60)).padStart(2,'0')+':'+String(Math.floor(rest%60)).padStart(2,'0'));
+    const xp=document.getElementById('miniXp');if(xp)xp.style.width=Math.min(100,st.xp/st.xpNext*100)+'%';
+    set('miniWave',t('xpNivel')+' '+st.xpNivel+' · '+t('muertes')+' '+st.kills);
+    set('miniObj',st.jefeSalido?t('jefeLlego'):t('aguantar'));
   }else{
-    $('miniTimer').textContent=t('oleadaWord')+' '+st.oleada+'/'+st.oleadasTotales;
-    $('miniWave').textContent=t('enemiesWord')+' '+(st.pending+st.enemies.length);
-    $('miniObj').textContent=t('oleadaWord')+' '+st.oleada+'/'+st.oleadasTotales+' · '+t('enemiesWord')+' '+(st.pending+st.enemies.length);
+    set('miniTimer',t('oleadaWord')+' '+st.oleada+'/'+st.oleadasTotales);
+    set('miniWave',t('enemiesWord')+' '+(st.pending+st.enemies.length));
+    set('miniObj',t('oleadaWord')+' '+st.oleada+'/'+st.oleadasTotales+' · '+t('enemiesWord')+' '+(st.pending+st.enemies.length));
   }
   drawMiniMap();
 }
@@ -242,7 +243,7 @@ function miniSupTick(dt){
   if(st.seg>=1200&&!st.jefeSalido){
     st.jefeSalido=true;
     st.enemies.push({id:miniEnemyId++,x:st.hero.x+350,y:st.hero.y,type:2,hp:300*st.enemyHpMul,max:300*st.enemyHpMul,cool:0});
-    $('miniTitle').textContent=t('jefeLlego');
+    const tt=document.getElementById('miniTitle');if(tt)tt.textContent=t('jefeLlego');
   }
   if(st.jefeSalido&&st.enemies.length===0){
     st.running=false;
