@@ -68,7 +68,8 @@ function applyLang(){
  sp.forEach((el,i)=>{if(spv[i])el.textContent=spv[i]});
  set('pauseBtn','⏸ '+t('pause'));set('mapLabel',t('mapLabel'));
  document.querySelectorAll('[data-key]').forEach(b=>{const v={run:t('run'),tail:t('tail'),shot:t('shot'),jet:t('jet')}[b.dataset.key];if(v)b.textContent=v});
- const mt=document.getElementById('miniTitle');if(mt&&miniState&&miniState.titulo)mt.innerHTML=miniState.titulo;
+ const msp=document.querySelectorAll('#miniHud .hudStatTop span');const msv=[t('life'),t('suit')];msp.forEach((el,i)=>{if(msv[i])el.textContent=msv[i]});
+const mt=document.getElementById('miniTitle');if(mt&&miniState&&miniState.titulo)mt.innerHTML=miniState.titulo;
  document.documentElement.lang=currentLang;
 }
 function completedIndex(){const c=names.map((_,i)=>ex('get_completed',i));const f=c.findIndex(v=>v<10);return f===-1?7:f;}

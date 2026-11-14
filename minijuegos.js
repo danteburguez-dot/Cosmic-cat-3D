@@ -7,13 +7,10 @@
 function miniProfile(){let p=null;try{p=JSON.parse(localStorage.getItem('cosmic_mini_v1')||'null')}catch(_){}if(!p)p={oleada:{nivel:1,estrellas:0},supervivencia:{nivel:1}};if(!p.oleada)p.oleada={nivel:1,estrellas:0};if(!p.supervivencia)p.supervivencia={nivel:1};return p;}
 function saveMiniProfile(p){try{localStorage.setItem('cosmic_mini_v1',JSON.stringify(p))}catch(_){}}
 
-// ---------- Estado del minijuego ----------
-const M_GUN=[1,0,0,0,0,0,0]; // mejoras temporales del minijuego
+const M_GUN=[1,0,0,0,0,0,0];
 let miniState=null;
-let miniEnemyId=0;
 let miniRenderer=null;
-
-function miniWorldSize(){return {w:3600,h:900};} // pasillo 3D: 3600 x 900
+let miniEnemyId=0;
 
 function openMini(){
   const p=miniProfile();
@@ -23,8 +20,7 @@ function openMini(){
   $('miniClose').onclick=closeDialog;
 }
 
-
-// ---------- TORRE estilo torneo (Mortal Kombat) ----------
+// ---------- TORRE estilo torneo ----------
 function openMiniTower(){
   const p=miniProfile();const actual=p.oleada.nivel;
   let rows='';
@@ -40,93 +36,86 @@ function openMiniTower(){
   });
 }
 
-
-// ---------- Arranque del modo oleada ----------
+// ---------- Arranques ----------
 function startMiniWave(nivel){
   const planeta=Math.floor((nivel-1)/2);
   M_GUN[0]=1;for(let i=1;i<7;i++)M_GUN[i]=0;
+  const total=5+nivel*2+(1)*2;
   miniState={
     modo:'oleada',nivel,planeta,oleada:1,oleadasTotales:5,titulo:'🌊 '+t('oleadaWord')+' '+nivel+' · '+names[planeta].toUpperCase(),
-    hp:100,maxHp:100,escudo:0,
+    hp:100,maxHp:100,escudo:20,maxEscudo:20,escudoT:0,
     colaDmg:7,metDmg:5,vel:3.2,
     enemyHpMul:1+(nivel-1)*.25,supDmg:1,supVel:1,
-    world:{w:3600,h:900},
-    hero:{x:400,y:450,dir:1},
-    enemies:[],spores:[],pickups:[],
-    kills:0,oleada:1,oleadaKills:5+nivel,
-    lastStep:performance.now(),cool:0,shotCool:0,invul:0,
+    world:{w:2400,h:2400},
+    hero:{x:1200,y:1200,dir:1},
+    enemies:[],spores:[],
+    kills:0,oleada:1,
+    pend:total,pending:total,spawnTimer:20,spawnEvery:90,
+    xp:0,xpNext:8,xpNivel:1,
+    lastStep:performance.now(),cool:0,shotCool:0,invul:0,regT:0,
     estrellasGanadas:0
   };
-  spawnMiniWave();
   beginMini(miniState.titulo+' · '+t('oleadaWord')+' 1/5');
 }
 
-
-function spawnMiniWave(){
-  const st=miniState;
-  st.enemies=[];
-  const n=5+st.nivel+st.oleada*2;
-  for(let i=0;i<n;i++){
-    const type=(i%7===3)?3:0; // escupidores entre los enemigos
-    spawnMiniEnemy(type);
-  }
-}
-
-function spawnMiniEnemy(type){
-  const st=miniState,W=st.world;
-  let x,y,tries=0;
-  do{x=300+Math.random()*(W.w-600);y=80+Math.random()*(W.h-160);tries++;}
-  while(Math.hypot(x-st.hero.x,y-st.hero.y)<420&&tries<30);
-  st.enemies.push({id:miniEnemyId++,x,y,type,hp:(type===3?14:10)*st.enemyHpMul,max:(type===3?14:10)*st.enemyHpMul,cool:60+Math.floor(Math.random()*80)});
-}
-
-// ---------- Arranque del modo supervivencia ----------
 function startMiniSurvival(nivel){
   const planeta=Math.min(7,nivel-1);
   M_GUN[0]=1;for(let i=1;i<7;i++)M_GUN[i]=0;
   miniState={
     modo:'supervivencia',nivel,planeta,titulo:'♾️ '+t('survTitle')+' '+nivel+' · '+names[planeta].toUpperCase(),
-    hp:100,maxHp:100,escudo:0,
+    hp:100,maxHp:100,escudo:20,maxEscudo:20,escudoT:0,
     colaDmg:7,metDmg:5,vel:3.2,
     enemyHpMul:1+(nivel-1)*.3,supDmg:1,supVel:1,
-    world:{w:3600,h:900},
-    hero:{x:1800,y:450,dir:1},
-    enemies:[],spores:[],pickups:[],
+    world:{w:2400,h:2400},
+    hero:{x:1200,y:1200,dir:1},
+    enemies:[],spores:[],
     seg:0,spawnTimer:0,spawnEvery:150,
     xp:0,xpNext:8,xpNivel:1,
-    kills:0,cool:0,shotCool:0,invul:0,
+    lastStep:performance.now(),cool:0,shotCool:0,invul:0,regT:0,
     jefeSalido:false,eliteSalido:false,supDmg:1,supVel:1
   };
   beginMini(miniState.titulo+' · '+t('aguantar'));
 }
 
+function spawnMiniEnemy(type){
+  const st=miniState,W=st.world;
+  let x,y,tries=0;
+  do{x=120+Math.random()*(W.w-240);y=120+Math.random()*(W.h-240);tries++;}
+  while(Math.hypot(x-st.hero.x,y-st.hero.y)<420&&tries<30);
+  st.enemies.push({id:miniEnemyId++,x,y,type,hp:(type===3?14:10)*st.enemyHpMul,max:(type===3?14:10)*st.enemyHpMul,cool:60+Math.floor(Math.random()*80)});
+}
 
 function beginMini(titulo){
   show('mini');
+  miniRenderer=new CosmicRenderer3D($('miniCanvas'),$('miniFx'));
+  miniState.titulo=titulo;
   $('miniTitle').textContent=titulo;
-  if(!miniRenderer)miniRenderer=new CosmicRenderer3D($('miniCanvas'),$('miniFx'));
   miniState.running=true;
-  miniLoop(performance.now());
+  miniState.lastStep=performance.now();
+  requestAnimationFrame(miniLoop);
 }
 
-// ---------- Bucle del minijuego ----------
+// ---------- Bucle ----------
 function miniLoop(time){
   if(!miniState||!miniState.running)return;
   requestAnimationFrame(miniLoop);
   if(miniState.paused)return;
-  const dt=Math.min(.08,(time-miniState.lastStep)/1000);
-  miniState.lastStep=time;
   const st=miniState;
-  // movimiento del gato
+  const dt=Math.min(.08,(time-st.lastStep)/1000);
+  st.lastStep=time;
+  const now=time/1000;
   const mask=inputMask();
-  let dx=(mask&2?1:0)-(mask&1?1:0),dy=(mask&8?1:0)-(mask&4?1:0);
   const W=st.world;
+  // movimiento del gato
+  let dx=(mask&2?1:0)-(mask&1?1:0),dy=(mask&8?1:0)-(mask&4?1:0);
   if(dx||dy){
     const v=st.vel/Math.hypot(dx,dy);
     st.hero.x=Math.max(60,Math.min(W.w-60,st.hero.x+dx*v));
     st.hero.y=Math.max(60,Math.min(W.h-60,st.hero.y+dy*v));
     if(dx)st.hero.dir=dx>0?1:-1;
   }
+  // regeneración del traje: 1/s tras 3 s sin daño
+  if(st.escudo<st.maxEscudo&&time-st.escudoT>3000&&time-st.regT>1000){st.escudo=Math.min(st.maxEscudo,st.escudo+1);st.regT=time;}
   // enemigos van DIRECTO al gato
   for(const e of st.enemies){
     const ddx=st.hero.x-e.x,ddy=st.hero.y-e.y,d=Math.hypot(ddx,ddy)||1;
@@ -134,10 +123,9 @@ function miniLoop(time){
     e.x+=ddx/d*sp;e.y+=ddy/d*sp;
     if(st.invul===0&&d<40){damageMini((e.type===2?20:e.type===1?15:e.type===3?7:5)*st.supDmg);e.x-=ddx/d*50;e.y-=ddy/d*50;}
     if(e.cool>0)e.cool--;
-    else if(e.type===3&&d<800){e.cool=170;const ux=ddx/d*3,uy=ddy/d*3;st.spores.push({x:e.x,y:e.y,vx:ux,vy:uy,life:300});if(audioCtx)sporeSpit();}
+    else if(e.type===3&&d<800){e.cool=170;st.spores.push({x:e.x,y:e.y,vx:ddx/d*3,vy:ddy/d*3,life:300});if(audioCtx)sporeSpit();}
   }
-  // esporas
-  for(const s of st.spores){s.x+=s.vx;s.y+=s.vy;s.life--;if(s.life<=0){s.dead=true;continue}if(Math.hypot(s.x-st.hero.x,s.y-st.hero.y)<34&&st.invul===0){damageMini(7*st.supDmg);s.dead=true;}}
+  for(const sp of st.spores){sp.x+=sp.vx;sp.y+=sp.vy;sp.life--;if(sp.life<=0){sp.dead=true;continue}if(Math.hypot(sp.x-st.hero.x,sp.y-st.hero.y)<34&&st.invul===0){damageMini(7*st.supDmg);sp.dead=true;}}
   st.spores=st.spores.filter(s=>!s.dead);
   // ataques del gato
   if(st.cool>0)st.cool--;
@@ -147,12 +135,17 @@ function miniLoop(time){
   st.enemies=st.enemies.filter(e=>!e.dead);
   if(st.invul>0)st.invul--;
   // lógica por modo
-  if(st.modo==='oleada')miniOleadaTick();else miniSupTick(dt);
-  miniDraw(time/1000);
+  if(st.modo==='oleada'){
+    // aparición progresiva y creciente dentro de la oleada
+    if(st.pending>0){st.spawnTimer--;if(st.spawnTimer<=0){spawnMiniEnemy(Math.random()<.15?3:0);st.pending--;st.spawnTimer=Math.max(30,st.spawnEvery-st.kills*2);}}
+    miniOleadaTick();
+  }else miniSupTick(dt);
+  updateMiniHud();
+  miniDraw(now);
 }
 
 function miniKill(e){
-  const st=miniState;st.kills++;st.waveKills=(st.waveKills||0)+1;
+  const st=miniState;st.kills++;
   if(st.modo==='supervivencia'){st.xp++;if(st.xp>=st.xpNext){st.xp=0;st.xpNext=Math.round(st.xpNext*1.4);st.xpNivel++;miniUpgradePanel();}}
   if(audioCtx)catStep();
 }
@@ -161,30 +154,65 @@ function damageMini(d){
   const st=miniState;
   const shield=Math.min(st.escudo||0,d);st.escudo=(st.escudo||0)-shield;
   st.hp-=(d-shield);
+  st.escudoT=performance.now();
   st.invul=30;
   if(st.hp<=0){st.hp=0;miniOver();}
+}
+
+// ---------- HUD del minijuego (igual estética que el modo historia) ----------
+function updateMiniHud(){
+  const st=miniState;
+  $('mLifeVal').textContent=Math.max(0,Math.ceil(st.hp))+'/'+st.maxHp;
+  $('mLifeBar').style.width=Math.max(0,Math.min(100,st.hp/st.maxHp*100))+'%';
+  $('mSuitVal').textContent=Math.ceil(st.escudo)+'/'+st.maxEscudo;
+  $('mSuitBar').style.width=Math.max(0,Math.min(100,st.escudo/st.maxEscudo*100))+'%';
+  $('miniKills').textContent=t('aliens')+' '+st.kills+'/'+(st.modo==='oleada'?st.oleadaKills*st.oleada:st.kills);
+  if(st.modo==='supervivencia'){
+    const rest=Math.max(0,1200-st.seg);
+    $('miniTimer').textContent=String(Math.floor(rest/60)).padStart(2,'0')+':'+String(Math.floor(rest%60)).padStart(2,'0');
+    $('miniXp').style.width=Math.min(100,st.xp/st.xpNext*100)+'%';
+    $('miniWave').textContent=t('xpNivel')+' '+st.xpNivel+' · '+t('muertes')+' '+st.kills;
+    $('miniObj').textContent=(st.jefeSalido?t('jefeLlego'):t('aguantar'));
+  }else{
+    $('miniTimer').textContent=t('oleadaWord')+' '+st.oleada+'/'+st.oleadasTotales;
+    $('miniWave').textContent=t('enemiesWord')+' '+(st.pending+st.enemies.length);
+    $('miniObj').textContent=t('oleadaWord')+' '+st.oleada+'/'+st.oleadasTotales+' · '+t('enemiesWord')+' '+(st.pending+st.enemies.length);
+  }
+  drawMiniMap();
+}
+
+function drawMiniMap(){
+  const st=miniState,c=$('miniMap'),g=c.getContext('2d');
+  const w=c.width,h=c.height;
+  g.clearRect(0,0,w,h);
+  g.fillStyle='#172534';g.fillRect(0,0,w,h);
+  const mp=(x,y)=>[x/st.world.w*w,y/st.world.h*h];
+  for(const e of st.enemies){const [px,py]=mp(e.x,e.y);g.fillStyle=e.type===2?'#dd8f94':e.type===1?'#b9a1df':e.type===3?'#c9d96a':'#90b6a5';g.fillRect(px-1.5,py-1.5,e.type?4:2,e.type?4:2);}
+  const [hx,hy]=mp(st.hero.x,st.hero.y);
+  g.fillStyle='#ffe2aa';g.beginPath();g.arc(hx,hy,4,0,Math.PI*2);g.fill();
 }
 
 // ---------- Fin de oleada: panel de mejora + estrellas ----------
 function miniOleadaTick(){
   const st=miniState;
-  if(st.enemies.length===0){
+  if(st.pending===0&&st.enemies.length===0){
     st.oleada++;
     st.estrellasGanadas+=2;
     const p=miniProfile();p.oleada.estrellas+=2;saveMiniProfile(p);
     st.running=false;
-    if(st.oleada>5){
+    if(st.oleada>st.oleadasTotales){
       p.oleada.nivel=Math.min(16,st.nivel+1);saveMiniProfile(p);
       dialog('⭐ '+t('nivelSuperado'),' <p>'+t('miniInfo')+p.oleada.nivel+'/16 · ⭐ '+p.oleada.estrellas+'</p><div class="buttonGrid"><button id="miniNext">'+t('sigNivel')+'</button><button id="miniLobby2">'+t('volver')+'</button></div>');
       $('miniNext').onclick=()=>{closeDialog();startMiniWave(st.nivel+1);};
       $('miniLobby2').onclick=()=>{closeDialog();show('lobby');};
     }else{
+      const total=5+st.nivel*2+(st.oleada)*2;
+      st.pending=total;st.spawnTimer=20;st.spawnEvery=Math.max(60,90-st.nivel*3);
       dialog('🔥 '+t('oleadaWord')+' '+(st.oleada-1)+' · +2 ⭐','<p>'+t('upgradeQ')+'</p><div class="buttonGrid">'+miniUpgradeButtons()+'</div>');
-      wireMiniUpgrades(()=>startMiniWave(st.nivel));
+      wireMiniUpgrades(()=>{st.running=true;st.lastStep=performance.now();requestAnimationFrame(miniLoop);});
     }
   }
 }
-
 
 function miniUpgradeButtons(){
   return '<button id="muHp">❤️ +20 VIDA</button><button id="muTail">🌀 +2 DAÑO COLA</button><button id="muMet">☄️ +2 DAÑO METEORITO</button><button id="muVel">➤ +0.3 VELOCIDAD</button>';
@@ -197,38 +225,38 @@ function wireMiniUpgrades(continuar){
   $('muVel').onclick=()=>{st.vel+=.3;closeDialog();continuar();};
 }
 
-// ---------- Supervivencia: 20 min, escalado, élite y jefe ----------
+// ---------- Supervivencia ----------
 function miniSupTick(dt){
   const st=miniState;
   st.seg+=dt;
   const min=Math.floor(st.seg/60);
-  $('miniTimer').textContent=String(Math.floor((1200-st.seg)/60)).padStart(2,'0')+':'+String(Math.floor((1200-st.seg)%60)).padStart(2,'0');
-  $('miniXp').style.width=Math.min(100,st.xp/st.xpNext*100)+'%';
-  $('miniWave').textContent='XP Nv '+st.xpNivel+' · Muertes '+st.kills;
-  // aparición progresiva: cada spawnEvery ticks... aparece más seguido con el tiempo
   st.spawnTimer--;
   if(st.spawnTimer<=0){
     st.spawnTimer=st.spawnEvery;
     spawnMiniEnemy(st.seg>600&&Math.random()<.25?3:0);
   }
   st.spawnEvery=Math.max(40,150-Math.floor(st.seg/30)*3);
-  // escalado cada 5 minutos: +40%
   const fase=Math.floor(min/5);
   st.supDmg=1+fase*.4;st.supVel=1+fase*.4;
-  // élite a los 10 min
-  if(min>=10&&!st.eliteSalido){st.eliteSalido=true;st.enemies.push({x:st.hero.x+300,y:st.hero.y,type:1,hp:120*st.enemyHpMul,max:120*st.enemyHpMul,cool:0});}
-  // jefe a los 20 min
-  if(st.seg>=1200&&!st.jefeSalido){st.jefeSalido=true;st.enemies.push({x:st.hero.x+350,y:st.hero.y,type:2,hp:300*st.enemyHpMul,max:300*st.enemyHpMul,cool:0});
-    $('miniTitle').textContent='👑 ¡EL JEFE HA LLEGADO! Eliminalo para ganar';
+  if(min>=10&&!st.eliteSalido){st.eliteSalido=true;st.enemies.push({id:miniEnemyId++,x:st.hero.x+300,y:st.hero.y,type:1,hp:120*st.enemyHpMul,max:120*st.enemyHpMul,cool:0});}
+  if(st.seg>=1200&&!st.jefeSalido){
+    st.jefeSalido=true;
+    st.enemies.push({id:miniEnemyId++,x:st.hero.x+350,y:st.hero.y,type:2,hp:300*st.enemyHpMul,max:300*st.enemyHpMul,cool:0});
+    $('miniTitle').textContent=t('jefeLlego');
   }
-  // jefe muerto → nivel superado
   if(st.jefeSalido&&st.enemies.length===0){
     st.running=false;
     const p=miniProfile();p.supervivencia.nivel=Math.min(8,st.nivel+1);saveMiniProfile(p);
-    dialog('👑 NIVEL '+st.nivel+' SUPERADO','<p>Derrotaste al jefe. Avanzás al nivel '+p.supervivencia.nivel+'.</p><div class="buttonGrid"><button id="miniNext2">SIGUIENTE NIVEL</button><button id="miniLobby3">VOLVER</button></div>');
+    dialog('👑 '+t('nivelSuperado'),'<p>'+t('sigNivel')+': '+p.supervivencia.nivel+'/8</p><div class="buttonGrid"><button id="miniNext2">'+t('sigNivel')+'</button><button id="miniLobby3">'+t('volver')+'</button></div>');
     $('miniNext2').onclick=()=>{closeDialog();startMiniSurvival(p.supervivencia.nivel);};
     $('miniLobby3').onclick=()=>{closeDialog();show('lobby');};
   }
+}
+
+function miniUpgradePanel(){
+  const st=miniState;st.paused=true;
+  dialog('⬆️ '+t('xpNivel')+' '+st.xpNivel,'<p>'+t('upgradeQ')+'</p><div class="buttonGrid">'+miniUpgradeButtons()+'</div>');
+  wireMiniUpgrades(()=>{st.paused=false;st.lastStep=performance.now();});
 }
 
 function miniOver(){
@@ -238,16 +266,9 @@ function miniOver(){
   $('miniExit2').onclick=()=>{closeDialog();show('lobby');};
 }
 
-
-function miniUpgradePanel(){
-  const st=miniState;st.paused=true;
-  dialog('⬆️ '+t('xpNivel')+' '+st.xpNivel,'<p>'+t('upgradeQ')+'</p><div class="buttonGrid">'+miniUpgradeButtons()+'</div>');
-  wireMiniUpgrades(()=>{st.paused=false;st.lastStep=performance.now();});
-}
-
 on('miniBtn',openMini);
 
-// ---------- Dibujo 3D del minijuego (pasillo + personajes) ----------
+// ---------- Dibujo 3D: mundo procedural igual al modo historia ----------
 function miniDraw(now){
   const st=miniState,r=miniRenderer;
   const gl=r.gl;const hx=st.hero.x/75,hz=st.hero.y/75;
@@ -258,15 +279,7 @@ function miniDraw(now){
   const fog=['#333842','#564538','#425d56','#6a4c44','#6c6470','#7e7078','#536d84','#364d75'][st.planeta];
   gl.clearColor(...CosmicRenderer3D.rgb(fog),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(r.program);
   gl.uniform3fv(r.uFog,CosmicRenderer3D.rgb(fog));gl.uniformMatrix4fv(r.uView,false,new Float32Array(r.view));gl.uniformMatrix4fv(r.uProj,false,new Float32Array(r.proj));
-  // piso del pasillo con columnas de pared a los costados
-  const W=st.world,cx=Math.floor(hx/3),cz=Math.floor(hz/3);
-  for(let i=cx-9;i<=cx+9;i++)for(let j=cz-5;j<=cz+5;j++){
-    const x=i*3,z=j*3;
-    if(x<0||x>W.w||z<0||z>W.h)continue;
-    r.draw('cube',x,-.75,z,1.4,.15,1.4,r.colors[st.planeta][0]);
-  }
-  for(let j=cz-5;j<=cz+5;j++){const z=j*3;r.draw('cube',0,-.2,z,.8,1.6,1.2,'#3d4a55');r.draw('cube',W.w,-.2,z,.8,1.6,1.2,'#3d4a55');}
-  
+  r.world(hx,hz,st.planeta,now);
   // Animación de personajes: ciclo de pasos por distancia real, igual que el modo historia
   const dt=r.previousRenderTime?Math.min(.08,Math.max(0,now-r.previousRenderTime)):0;
   r.previousRenderTime=now;
@@ -288,4 +301,16 @@ function miniDraw(now){
   if(r.enemyMotion.size>140)for(const id of r.enemyMotion.keys())if(!alive.has(id))r.enemyMotion.delete(id);
   for(const sp of st.spores){const ox=sp.x/75,oz=sp.y/75;r.draw('sphere',ox,.5,oz,.15,.15,.15,'#8fbf4d');}
   r.cat(hx,hz,st.hero.dir,st.planeta,now,'#d8d9e1',100,0,st.hero.x+300,st.hero.y,r.heroAnim,r.heroMovement||0);
+  // barras de vida encima de los enemigos (capa 2D)
+  const g=r.og,sw=r.overlay.width/innerWidth,sh=r.overlay.height/innerHeight;
+  g.setTransform(sw,0,0,sh,0,0);g.clearRect(0,0,innerWidth,innerHeight);
+  for(const e of st.enemies){
+    const ox=e.x/75,oz=e.y/75;
+    if(Math.abs(ox-hx)>26||Math.abs(oz-hz)>18)continue;
+    const pos=r.project(ox,e.type?2.2:1.1,oz);if(!pos)continue;
+    const bw=e.type===2?82:e.type===1?70:50;
+    g.fillStyle='#152330d9';g.fillRect(pos[0]-bw/2,pos[1]-15,bw,7);
+    g.fillStyle=e.type===1||e.type===2?'#e7a4b1':e.type===3?'#b9cf5a':'#93ba9e';
+    g.fillRect(pos[0]-bw/2,pos[1]-15,bw*Math.max(0,e.hp/e.max),7);
+  }
 }
