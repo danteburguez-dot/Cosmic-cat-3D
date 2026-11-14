@@ -110,3 +110,15 @@ DATOS Y RECURSOS DE NASA UTILIZADOS (Space Apps Challenge 2026 - reto "Space Mis
 - NASA GMAT (Δv y órbitas de referencia): https://software.nasa.gov/software/GSC-19468-1
 - NASA GSFC Mission Design Lab (niveles de estudio y disciplinas): https://etd.gsfc.nasa.gov/capabilities/integrated-design-center/mission-design-lab/
 - NASA Webb "Build It Yourself" (flujo objetivo -> instrumentos): https://science.nasa.gov/mission/webb/game-build-it-yourself/
+
+
+MINIJUEGOS (desde el lobby)
+- Botón MINIJUEGO: Modo Oleada y Modo Supervivencia.
+- Oleada: torre de 16 niveles (cada 2 niveles cambia el planeta), 5 oleadas por nivel, +2 ⭐ por oleada y un panel de mejora temporal entre oleadas.
+- Supervivencia: 8 niveles (un mapa por planeta), aguantá 20 minutos; cada 5 min los enemigos ganan +40% de daño y velocidad; a los 10 min sale un élite y a los 20 el jefe; la barra de XP sube matando enemigos y al llenarse elegís una mejora temporal.
+- Los enemigos de los minijuegos van directo hacia el gato.
+- Las mejoras de los minijuegos solo valen dentro de los minijuegos, por modo.
+
+IDIOMAS
+- Botón 🌐 en el inicio y en el lobby: Español, English, 日本語, 中文, Русский.
+- Traduce el inicio, el lobby, el HUD, los controles táctiles y los minijuegos.
