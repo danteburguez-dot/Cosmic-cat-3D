@@ -87,8 +87,8 @@ class CosmicRenderer3D {
  const stride=Math.sin(gait)*move,opp=Math.sin(gait+Math.PI)*move;
  const heavy=type===2?.09:type===1?.06:.035;
  const bob=Math.abs(stride)*heavy+Math.sin(now*(type===2?1.7:2.7)+x)*.022;
- const base=type===2?'#a65a67':type===1?'#a478af':'#5f9b76';
- const eye=type===2?'#ffba6a':type===1?'#ffc2e0':'#ffcf93';
+ const base=type===2?'#a65a67':type===1?'#a478af':type===3?'#96a04b':'#5f9b76';
+ const eye=type===2?'#ffba6a':type===1?'#ffc2e0':type===3?'#d6e88a':'#ffcf93';
  const ca=Math.cos(heading),sa=Math.sin(heading);
  const d=(kind,px,py,pz,sx,sy,sz,color,rot=0,tilt=0)=>{
   let ax=px-x,az=pz-z;
@@ -102,15 +102,20 @@ class CosmicRenderer3D {
  for(let side of [-1,1]){
   for(let front of [-1,1]){
    const step=(side===front?stride:opp),lift=Math.max(0,step)*.15*mul;
-   d('sphere',x+side*.37*mul,.15*mul+bob+lift,z+front*.32*mul+step*.20*mul,.14*mul,.17*mul,.15*mul,type===2?'#874855':type===1?'#7e5d91':'#486c5b',0,step*.4);
+   d('sphere',x+side*.37*mul,.15*mul+bob+lift,z+front*.32*mul+step*.20*mul,.14*mul,.17*mul,.15*mul,type===2?'#874855':type===1?'#7e5d91':type===3?'#7d853a':'#486c5b',0,step*.4);
    d('sphere',x+side*.39*mul,.06*mul+bob+lift,z+front*.34*mul+step*.25*mul,.17*mul,.07*mul,.18*mul,'#49625c');
   }
   const wiggle=Math.sin(now*(type===2?2.5:4.2)+side)*.25+stride*.18;
-  d('cone',x+side*.24*mul+wiggle*.08*mul,.95*mul+bob,z+.2*mul+wiggle*.1*mul,.12*mul,.28*mul,.12*mul,type===2?'#d2a0ae':'#779b85',0,wiggle);
+  d('cone',x+side*.24*mul+wiggle*.08*mul,.95*mul+bob,z+.2*mul+wiggle*.1*mul,.12*mul,.28*mul,.12*mul,type===2?'#d2a0ae':type===3?'#b6c45e':'#779b85',0,wiggle);
   d('sphere',x+side*.25*mul+wiggle*.12*mul,1.20*mul+bob,z+.2*mul+wiggle*.14*mul,.085*mul,.085*mul,.085*mul,eye);
  }
  const tailWag=Math.sin(now*(type===2?2:4)+x)*.20+stride*.10;
  d('sphere',x+tailWag*.4*mul,.38*mul+bob,z-.49*mul,.15*mul,.14*mul,.31*mul,base,tailWag);
+  // Escupidor de esporas: púas verdes tipo virus en el lomo y corneta lanzadora.
+  if(type===3){
+   for(let k=0;k<3;k++)d('cone',x-(.22-.22*k)*mul,.62*mul+bob,z-.15*mul,.09*mul,.2*mul,.09*mul,'#c9d96a',0,.5);
+   d('cone',x,y+.42*mul+bob,z+.42*mul,.10*mul,.16*mul,.10*mul,'#c9d96a',Math.sin(now*3)*.3,1.2);
+  }
  if(type>0){
   for(let side of [-1,1]){
    d('cone',x+side*.33*mul,.96*mul+bob,z-.13*mul,.14*mul,.26*mul,.14*mul,'#d8a5d0');
@@ -137,8 +142,9 @@ class CosmicRenderer3D {
   if(dy>=-0.0001)return null;
   const t=-ey/dy;return {x:ex+dx*t,z:ez+dz*t};
  }
- render(hero,enemies,pickups,p,now,suit,brightness,run){const gl=this.gl;this.t=now;const x=hero.x/this.scale,z=hero.y/this.scale;const ratio=this.canvas.width/this.canvas.height;this.proj=CosmicRenderer3D.perspective(Math.PI/3,ratio,.2,150);let dist=15.5+(ratio<1?6:0);this.cpos=[x,dist,z+dist*.69];this.target=[x,0,z-1];this.view=CosmicRenderer3D.lookAt(this.cpos,this.target);gl.viewport(0,0,this.canvas.width,this.canvas.height);let fog=['#333842','#564538','#425d56','#6a4c44','#6c6470','#7e7078','#536d84','#364d75'][p];gl.clearColor(...CosmicRenderer3D.rgb(fog),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(this.program);gl.uniform3fv(this.uFog,CosmicRenderer3D.rgb(fog));gl.uniformMatrix4fv(this.uView,false,new Float32Array(this.view));gl.uniformMatrix4fv(this.uProj,false,new Float32Array(this.proj));this.world(x,z,p,now);
+ render(hero,enemies,pickups,spores,p,now,suit,brightness,run){const gl=this.gl;this.t=now;const x=hero.x/this.scale,z=hero.y/this.scale;const ratio=this.canvas.width/this.canvas.height;this.proj=CosmicRenderer3D.perspective(Math.PI/3,ratio,.2,150);let dist=15.5+(ratio<1?6:0);this.cpos=[x,dist,z+dist*.69];this.target=[x,0,z-1];this.view=CosmicRenderer3D.lookAt(this.cpos,this.target);gl.viewport(0,0,this.canvas.width,this.canvas.height);let fog=['#333842','#564538','#425d56','#6a4c44','#6c6470','#7e7078','#536d84','#364d75'][p];gl.clearColor(...CosmicRenderer3D.rgb(fog),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.useProgram(this.program);gl.uniform3fv(this.uFog,CosmicRenderer3D.rgb(fog));gl.uniformMatrix4fv(this.uView,false,new Float32Array(this.view));gl.uniformMatrix4fv(this.uProj,false,new Float32Array(this.proj));this.world(x,z,p,now);
  for(const ob of pickups){let ox=ob.x/this.scale,oz=ob.y/this.scale;if(Math.abs(ox-x)<30&&Math.abs(oz-z)<22)this.pickup(ox,oz,ob.type,now)}
+  for(const s of spores||[]){const ox=s.x/this.scale,oz=s.y/this.scale;if(Math.abs(ox-x)>30||Math.abs(oz-z)>22)continue;this.draw('sphere',ox,.55,oz,.15,.15,.15,'#8fbf4d');for(let k=0;k<4;k++){const a=k*1.57+now*2.5;this.draw('sphere',ox+Math.cos(a)*.17,.55+Math.sin(a)*.17,oz+Math.sin(a)*.17,.055,.055,.055,'#c6e06a');}}
  // El ciclo de pasos depende de desplazamiento real, no solo del reloj.
  const dt=this.previousRenderTime?Math.min(.08,Math.max(0,now-this.previousRenderTime)):0;
  this.previousRenderTime=now;
@@ -177,7 +183,7 @@ class CosmicRenderer3D {
  this.sparkles=this.sparkles.filter(e=>now-e.born<.45);for(const e of this.sparkles){let a=(now-e.born)/.45;this.draw('ring',e.x,.55,e.z,.15+a*.5,.07,.15+a*.5,'#eebf91')}
  // Etiquetas y barras de vida en una capa 2D transparente encima de la escena 3D.
  const g=this.og,sw=this.overlay.width/innerWidth,sh=this.overlay.height/innerHeight;g.setTransform(sw,0,0,sh,0,0);g.clearRect(0,0,innerWidth,innerHeight);
- for(const e of enemies){if(Math.abs(e.x/this.scale-x)>29||Math.abs(e.y/this.scale-z)>19)continue;let pos=this.project(e.x/this.scale,e.type?2.7:1.3,e.y/this.scale);if(!pos)continue;const bw=e.type?82:50;g.fillStyle='#152330d9';g.fillRect(pos[0]-bw/2,pos[1]-15,bw,7);g.fillStyle=e.type?'#e7a4b1':'#93ba9e';g.fillRect(pos[0]-bw/2,pos[1]-15,bw*Math.max(0,e.hp/e.max),7);if(e.type){g.fillStyle='#fff';g.font='bold 11px system-ui';g.textAlign='center';g.fillText(e.type===2?'👑 JEFE':'ÉLITE',pos[0],pos[1]-20)}}
+ for(const e of enemies){if(Math.abs(e.x/this.scale-x)>29||Math.abs(e.y/this.scale-z)>19)continue;let pos=this.project(e.x/this.scale,e.type?2.7:1.3,e.y/this.scale);if(!pos)continue;const bw=(e.type===1||e.type===2)?82:50;g.fillStyle='#152330d9';g.fillRect(pos[0]-bw/2,pos[1]-15,bw,7);g.fillStyle=e.type===1||e.type===2?'#e7a4b1':e.type===3?'#b9cf5a':'#93ba9e';g.fillRect(pos[0]-bw/2,pos[1]-15,bw*Math.max(0,e.hp/e.max),7);if(e.type===1||e.type===2){g.fillStyle='#fff';g.font='bold 11px system-ui';g.textAlign='center';g.fillText(e.type===2?'👑 JEFE':'ÉLITE',pos[0],pos[1]-20)}}
  if(this.aimOverlay){const a=this.aimOverlay;
   g.beginPath();g.arc(a.hx,a.hy,250,0,2*Math.PI);g.strokeStyle='#9de5d844';g.lineWidth=1.5;g.stroke();
   g.beginPath();g.moveTo(a.sx-12,a.sy);g.lineTo(a.sx-5,a.sy);g.moveTo(a.sx+5,a.sy);g.lineTo(a.sx+12,a.sy);g.moveTo(a.sx,a.sy-12);g.lineTo(a.sx,a.sy-5);g.moveTo(a.sx,a.sy+5);g.lineTo(a.sx,a.sy+12);g.strokeStyle='#e5f4d9';g.lineWidth=2;g.stroke();

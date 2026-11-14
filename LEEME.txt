@@ -14,8 +14,8 @@ NOVEDADES
   meteoritos voladores y destellos de impacto.
 - Iluminación tenue y colores mate.
 - Conserva la lógica C++ compilada a WebAssembly y las 4 casillas de guardado.
-- 8 planetas, 10 niveles por planeta, mapas 8.000 x 2.600,
-  30/50/80 enemigos según dificultad, 6 baterías en gigantes gaseosos.
+- 8 planetas, 10 niveles por planeta, mapas 16.000 x 5.200,
+  60/80/110 enemigos según dificultad, 6 baterías en gigantes gaseosos.
 
 ABRIR EN COMPUTADORA
 1. Extraer el ZIP completo (no abrir archivos desde dentro del ZIP).
@@ -70,6 +70,17 @@ SONIDO
 - Los aliens normales, élites y jefes tienen pasos y ataques con sonidos diferentes.
 - Cada planeta tiene una pareja distinta de ataques especiales para élites y jefes; cada enemigo alterna solamente esos dos ataques.
 - El audio se habilita automáticamente al tocar o hacer clic para comenzar a jugar.
+
+MEJORAS DE COMBATE (noviembre 2026)
+- 60/80/110 enemigos por dificultad (se sumaron 30 a cada una) y mapas 4 veces más grandes.
+- Los enemigos deambulan por el mapa aunque el gato esté lejos; no quedan quietos.
+- Nuevo enemigo escupidor: un alien verde con púas que escupe "gen" verde
+  (parecido a un virus) a distancia; cada espora hace 7 de daño y retrocede
+  si el gato se acerca. En el minimapa se ve amarillo-verde.
+- Resistencia del traje: escudo propio que absorbe el daño antes que la vida.
+  Se regenera 1 punto por segundo después de 3 segundos sin recibir daño.
+  Máximo inicial 20; se mejora de 5 en 5 en el panel MEJORAS (sección Traje).
+- Completar un nivel de cualquier planeta otorga 1 estrella adicional.
 
 ANIMACIONES 3D DE PERSONAJES
 - El gato mueve alternativamente brazos y piernas cuando camina/corre.

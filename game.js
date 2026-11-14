@@ -36,7 +36,7 @@ canvas.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||screen!=='
 window.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'){if(e.button===0)mouseButtons.left=false;if(e.button===2)mouseButtons.right=false;}});
 canvas.addEventListener('contextmenu',e=>e.preventDefault());
 
-let renderer=null,shownShot=0,shownTail=0,previousEnergy=20,attackShot=0,attackTail=0;
+let renderer=null,shownShot=0,shownTail=0,previousEnergy=20,attackShot=0,attackTail=0,lastSporeFired=0;
 const mini=$('miniMap'),mctx=mini.getContext('2d');
 
 // Sonido procedural: el juego sigue funcionando sin descargar archivos externos.
@@ -89,6 +89,7 @@ function specialGameplay(){
     renderer.emitSpecial(x,z,hx,hz,currentP,attack,type,now);specialSound(currentP,attack,type);
   }
 }
+function sporeSpit(){soundTone(95,.12,'square',.09,-45);soundNoise(.08,.06,300);}
 function soundGameplay(mask,wasHp,oldEnemies){
   if(!audioCtx)return;const now=performance.now()/1000,hx=ex('hero_x'),hy=ex('hero_y');
   const moving=(mask&15)!==0;
@@ -192,7 +193,7 @@ function renderLobby(){
  $('campaignPlanet').textContent=names[unlocked];$('campaignLevel').textContent=`${Math.min(10,complete[unlocked]+1)} / 10`;
  $('campaignRocket').textContent=count===8?'Piezas completas':'Sin ensamblar';$('partsProgress').textContent=count+' de 8';$('partsBar').style.width=count/8*100+'%';
  $('statInitialLife').textContent=80+(ex('get_upgrade',1)-1)*15;$('statTail').textContent=7+(ex('get_upgrade',0)-1)*2;
- $('statEnergy').textContent=20+(ex('get_upgrade',2)-1)*4;$('statStamina').textContent=10+(ex('get_upgrade',4)-1)*3;
+ $('statEnergy').textContent=20+(ex('get_upgrade',2)-1)*4;$('statStamina').textContent=10+(ex('get_upgrade',4)-1)*3;$('statSuit').textContent=20+(ex('get_upgrade',6)-1)*5;
   $('exploreCurrent').textContent='🪐 EXPLORAR '+names[unlocked].toUpperCase();$('exploreCurrent').onclick=()=>chooseLevel(unlocked);
    requestAnimationFrame(animateLobbySystem);
  }
@@ -271,9 +272,9 @@ function chooseLevel(p){
     </button>`;
   }).join('');
   const difficulties=[
-    ['FÁCIL','🟡','30 enemigos','1 botiquín'],
-    ['NORMAL','🟠','50 enemigos','3 botiquines'],
-    ['DIFÍCIL','🔴','80 enemigos','10 botiquines']
+    ['FÁCIL','🟡','60 enemigos','1 botiquín'],
+    ['NORMAL','🟠','80 enemigos','3 botiquines'],
+    ['DIFÍCIL','🔴','110 enemigos','10 botiquines']
   ].map(([name,icon,enemies,medkits],i)=>`<button type="button" class="difficultyTile" data-diff="${i}"><strong>${name} ${icon}</strong><small>${enemies} · ${medkits}</small></button>`).join('');
   const html=`<div class="levelPicker">
     <header class="levelPickerHead"><span>EXPLORACIÓN PLANETARIA</span><h3>${names[p].toUpperCase()}</h3></header>
@@ -297,7 +298,7 @@ function chooseLevel(p){
   const update=()=>{
     document.querySelectorAll('#modal .levelTile').forEach(b=>{const selected=+b.dataset.level===currentL;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
     document.querySelectorAll('#modal .difficultyTile').forEach(b=>{const selected=+b.dataset.diff===currentD;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
-    $('selectionText').textContent=`${description}. Nivel ${currentL} · ${[30,50,80][currentD]} enemigos · ${[1,3,10][currentD]} botiquines.`;
+    $('selectionText').textContent=`${description}. Nivel ${currentL} · ${[60,80,110][currentD]} enemigos · ${[1,3,10][currentD]} botiquines.`;
     $('enterLevel').textContent=`▶ JUGAR NIVEL ${currentL}`;
   };
   document.querySelectorAll('#modal [data-level]').forEach(b=>b.onclick=()=>{currentL=Number(b.dataset.level);update()});
@@ -316,15 +317,16 @@ const joystick=$('joystick'),joystickKnob=$('joystickKnob');let joystickPointer=
 function updateJoystick(e){if(joystickPointer===null)return;const r=joystick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,max=r.width*.36;let dx=e.clientX-cx,dy=e.clientY-cy;const len=Math.hypot(dx,dy),scale=len>max?max/len:1;dx*=scale;dy*=scale;joystickKnob.style.transform=`translate(${dx}px,${dy}px)`;for(const k of ['left','right','up','down'])touchInput.delete(k);if(Math.abs(dx)>max*.25)touchInput.add(dx<0?'left':'right');if(Math.abs(dy)>max*.25)touchInput.add(dy<0?'up':'down');}
 function releaseJoystick(){joystickPointer=null;joystickKnob.style.transform='translate(0,0)';for(const k of ['left','right','up','down'])touchInput.delete(k);}
 if(joystick){joystick.addEventListener('pointerdown',e=>{e.preventDefault();joystickPointer=e.pointerId;try{joystick.setPointerCapture(e.pointerId)}catch(_){ }updateJoystick(e)});joystick.addEventListener('pointermove',updateJoystick);for(const ev of ['pointerup','pointercancel','lostpointercapture'])joystick.addEventListener(ev,releaseJoystick);}
-function loop(time){if(!playing||screen!=='play')return;requestAnimationFrame(loop);if(paused)return;const dt=Math.min(.08,(time-lastFrame)/1000);lastFrame=time;let iterations=Math.min(4,Math.round(dt*60));aimEngine();const mask=inputMask(),oldEnergy=ex('hero_energy'),oldHp=ex('hero_hp'),oldEnemies=[];for(let i=0;i<ex('enemy_total');i++)oldEnemies[i]=[ex('enemy_x',i),ex('enemy_y',i)];touchAim(mask);for(let i=0;i<iterations;i++)ex('step',mask);visualAttacks(mask,oldEnergy);soundGameplay(mask,oldHp,oldEnemies);specialGameplay();detectNewPart();frameCount++;if(frameCount%8===0){updateHUD();if(ex('get_phase')!==prevPhase){prevPhase=ex('get_phase');if(prevPhase===2){paused=true;setTimeout(()=>{if(screen==='play'&&$('modal').hidden)levelWon()},200)}}if(ex('get_over')){paused=true;loseGame();}}draw();}
-function updateHUD(){const hp=Math.ceil(ex('hero_hp')),maxHp=ex('hero_max_hp'),en=Math.ceil(ex('hero_energy')),maxEn=ex('hero_max_energy'),st=Math.ceil(ex('hero_stamina')),maxSt=10+(ex('get_upgrade',4)-1)*3,jp=Math.ceil(ex('hero_jetpack'));$('hudPlanet').textContent=`${names[currentP].toUpperCase()} · NIVEL ${currentL}`;$('hudLifeValue').textContent=`${hp}/${maxHp}`;$('hudEnergyValue').textContent=`${en}/${maxEn}`;$('hudRunValue').textContent=`${st}/${maxSt}`;$('hudLifeBar').style.width=`${Math.max(0,Math.min(100,hp/maxHp*100))}%`;$('hudEnergyBar').style.width=`${Math.max(0,Math.min(100,en/maxEn*100))}%`;$('hudRunBar').style.width=`${Math.max(0,Math.min(100,st/maxSt*100))}%`;$('hudJetWrap').hidden=!gasPlanet(currentP);$('jetBtn').style.display=gasPlanet(currentP)?'':'none';$('hudJetValue').textContent=`${jp}/50`;$('hudJetBar').style.width=`${Math.max(0,Math.min(100,jp/50*100))}%`;$('hudEnemy').textContent=`ALIENS ${ex('total_kills')}/${ex('target_kills')}`;$('levelObjective').textContent=(ex('get_phase')===3?'TODOS DERROTADOS · FALTA PIEZA':(ex('get_parts')&(1<<currentP))?'PIEZA ✓ · DERROTÁ ENEMIGOS':'BUSCÁ PIEZA + DERROTÁ ENEMIGOS');const sec=ex('get_elapsed');$('hudTime').textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`}
+function loop(time){if(!playing||screen!=='play')return;requestAnimationFrame(loop);if(paused)return;const dt=Math.min(.08,(time-lastFrame)/1000);lastFrame=time;let iterations=Math.min(4,Math.round(dt*60));aimEngine();const mask=inputMask(),oldEnergy=ex('hero_energy'),oldHp=ex('hero_hp'),oldEnemies=[];for(let i=0;i<ex('enemy_total');i++)oldEnemies[i]=[ex('enemy_x',i),ex('enemy_y',i)];touchAim(mask);for(let i=0;i<iterations;i++)ex('step',mask);visualAttacks(mask,oldEnergy);soundGameplay(mask,oldHp,oldEnemies);const sporeFired=ex('proj_fired');if(sporeFired!==lastSporeFired){lastSporeFired=sporeFired;if(audioCtx)sporeSpit();}specialGameplay();detectNewPart();frameCount++;if(frameCount%8===0){updateHUD();if(ex('get_phase')!==prevPhase){prevPhase=ex('get_phase');if(prevPhase===2){paused=true;setTimeout(()=>{if(screen==='play'&&$('modal').hidden)levelWon()},200)}}if(ex('get_over')){paused=true;loseGame();}}draw();}
+function updateHUD(){const hp=Math.ceil(ex('hero_hp')),maxHp=ex('hero_max_hp'),en=Math.ceil(ex('hero_energy')),maxEn=ex('hero_max_energy'),st=Math.ceil(ex('hero_stamina')),maxSt=10+(ex('get_upgrade',4)-1)*3,jp=Math.ceil(ex('hero_jetpack')),su=Math.ceil(ex('hero_suit')),maxSu=ex('hero_max_suit');$('hudPlanet').textContent=`${names[currentP].toUpperCase()} · NIVEL ${currentL}`;$('hudLifeValue').textContent=`${hp}/${maxHp}`;$('hudEnergyValue').textContent=`${en}/${maxEn}`;$('hudRunValue').textContent=`${st}/${maxSt}`;$('hudLifeBar').style.width=`${Math.max(0,Math.min(100,hp/maxHp*100))}%`;$('hudEnergyBar').style.width=`${Math.max(0,Math.min(100,en/maxEn*100))}%`;$('hudRunBar').style.width=`${Math.max(0,Math.min(100,st/maxSt*100))}%`;$('hudJetWrap').hidden=!gasPlanet(currentP);$('jetBtn').style.display=gasPlanet(currentP)?'':'none';$('hudJetValue').textContent=`${jp}/50`;$('hudJetBar').style.width=`${Math.max(0,Math.min(100,jp/50*100))}%`;$('hudSuitValue').textContent=`${su}/${maxSu}`;$('hudSuitBar').style.width=`${Math.max(0,Math.min(100,su/maxSu*100))}%`;$('hudEnemy').textContent=`ALIENS ${ex('total_kills')}/${ex('target_kills')}`;$('levelObjective').textContent=(ex('get_phase')===3?'TODOS DERROTADOS · FALTA PIEZA':(ex('get_parts')&(1<<currentP))?'PIEZA ✓ · DERROTÁ ENEMIGOS':'BUSCÁ PIEZA + DERROTÁ ENEMIGOS');const sec=ex('get_elapsed');$('hudTime').textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`}
 function draw(){
  if(!engine||screen!=='play')return;
  if(!renderer)renderer=new CosmicRenderer3D(canvas,$('fxCanvas'));
  const hero={x:ex('hero_x'),y:ex('hero_y'),dir:ex('hero_dir'),aimX:ex('hero_aim_x'),aimY:ex('hero_aim_y')};
  const enemies=[]; for(let i=0;i<ex('enemy_total');i++)if(ex('enemy_alive',i))enemies.push({id:i,x:ex('enemy_x',i),y:ex('enemy_y',i),type:ex('enemy_type',i),hp:ex('enemy_hp',i),max:ex('enemy_max_hp',i)});
+ const spores=[];for(let i=0;i<ex('proj_total');i++)if(ex('proj_alive',i))spores.push({x:ex('proj_x',i),y:ex('proj_y',i)});
  const pickups=[];for(let i=0;i<ex('pickup_total');i++)if(ex('pickup_alive',i))pickups.push({x:ex('pickup_x',i),y:ex('pickup_y',i),type:ex('pickup_type',i)});
- let now=performance.now()/1000;renderer.render(hero,enemies,pickups,currentP,now,suitColor,suitBrightness,{tail:Math.max(0,1-(now-attackTail)/.35)});
+ let now=performance.now()/1000;renderer.render(hero,enemies,pickups,spores,currentP,now,suitColor,suitBrightness,{tail:Math.max(0,1-(now-attackTail)/.35)});
  if(frameCount%7===0)drawMini();
 }
 function drawMini(){
@@ -338,7 +340,7 @@ function drawMini(){
    const [px,py]=mapPoint(ex('enemy_x',i),ex('enemy_y',i));
    const type=ex('enemy_type',i);
    if(type===0)ordinaryAlive++;
-   mctx.fillStyle=type===2?'#dd8f94':type===1?'#b9a1df':'#90b6a5';
+   mctx.fillStyle=type===2?'#dd8f94':type===1?'#b9a1df':type===3?'#c9d96a':'#90b6a5';
    mctx.fillRect(px-1,py-1,type?4:2,type?4:2);
  }
  let hasPiece=false;
@@ -379,12 +381,12 @@ on('pauseBtn',pauseGame);
 function askExit(){dialog('¿Seguro que quieres salir?','<div class="buttonGrid"><button id="confirmExit">SÍ, SALIR</button><button id="cancelExit">CANCELAR</button></div>');$('confirmExit').onclick=()=>{closeDialog();playing=false;paused=false;renderLobby();show('lobby')};$('cancelExit').onclick=pauseGame;}
 function levelWon(){dialog('⭐ ¡NIVEL SUPERADO!',`<p>Completaste <b>${names[currentP]} · Nivel ${currentL}</b>.</p><p>Enemigos derrotados: ${ex('total_kills')}. Estrellas azules equivalentes: ${ex('get_stars')}. Piezas de cohete: ${bitCount(ex('get_parts'))}/8.</p><div class="buttonGrid"><button id="backLobby">LOBBY</button><button id="nextLevel">SIGUIENTE NIVEL</button></div>`);$('backLobby').onclick=()=>{closeDialog();playing=false;renderLobby();show('lobby')};$('nextLevel').onclick=()=>{closeDialog();playing=false;let p=currentP,l=currentL+1;if(l>10){l=1;p=Math.min(7,p+1)}openLoading(()=>beginLevel(p,l,currentD),'Cargando siguiente nivel')};}
 function loseGame(){dialog('💔 TE QUEDASTE SIN VIDA','<p>Podés volver a intentar este nivel o retornar al lobby.</p><div class="buttonGrid"><button id="retry">REINTENTAR</button><button id="backLobby">LOBBY</button></div>');$('retry').onclick=()=>{closeDialog();playing=false;openLoading(()=>beginLevel(currentP,currentL,currentD),'Reiniciando nivel')};$('backLobby').onclick=()=>{closeDialog();playing=false;renderLobby();show('lobby')}}
-function getSave(){return {planet:currentP,level:currentL,diff:currentD,x:ex('hero_x'),y:ex('hero_y'),hp:ex('hero_hp'),energy:ex('hero_energy'),stamina:ex('hero_stamina'),jet:ex('hero_jetpack'),stars:ex('get_stars'),parts:ex('get_parts'),complete:names.map((_,i)=>ex('get_completed',i)),upgrades:Array.from({length:6},(_,i)=>ex('get_upgrade',i)),elapsed:ex('get_elapsed'),color:suitColor,brightness:suitBrightness,saved:new Date().toLocaleString('es-PY')}}
+function getSave(){return {planet:currentP,level:currentL,diff:currentD,x:ex('hero_x'),y:ex('hero_y'),hp:ex('hero_hp'),energy:ex('hero_energy'),stamina:ex('hero_stamina'),jet:ex('hero_jetpack'),suit:ex('hero_suit'),stars:ex('get_stars'),parts:ex('get_parts'),complete:names.map((_,i)=>ex('get_completed',i)),upgrades:Array.from({length:7},(_,i)=>ex('get_upgrade',i)),elapsed:ex('get_elapsed'),color:suitColor,brightness:suitBrightness,saved:new Date().toLocaleString('es-PY')}}
 function saveSlots(){let content='<p>Elegí una de las cuatro casillas para guardar tu progreso.</p><div class="buttonGrid">';for(let i=1;i<=4;i++){let x=JSON.parse(localStorage.getItem('cosmic_cpp_save_'+i)||'null');content+=`<button data-slot="${i}">💾 CASILLA ${i}<br><small>${x?names[x.planet]+' · Nivel '+x.level:'VACÍA'}</small></button>`;}content+='</div>';dialog('GUARDAR PARTIDA',content);document.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{localStorage.setItem('cosmic_cpp_save_'+b.dataset.slot,JSON.stringify(getSave()));dialog('PARTIDA GUARDADA',`<p>Se guardó en la casilla ${b.dataset.slot}.</p><button id="backPause">CONTINUAR</button>`);$('backPause').onclick=()=>{closeDialog();if(screen==='play'){paused=false;lastFrame=performance.now()}}})}
-function loadSlots(fromStart){if(!engine)loadedEngine();let content='<p>Elegí la partida que querés continuar.</p><div class="buttonGrid">';for(let i=1;i<=4;i++){const x=JSON.parse(localStorage.getItem('cosmic_cpp_save_'+i)||'null');content+=`<button data-load="${i}" ${x?'':'disabled'}>CASILLA ${i}<br><small>${x?names[x.planet]+' · Nivel '+x.level+' · '+x.saved:'VACÍA'}</small></button>`;}content+='</div>';dialog('RETORNAR A UNA PARTIDA',content);document.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{const x=JSON.parse(localStorage.getItem('cosmic_cpp_save_'+b.dataset.load));if(!x)return;closeDialog();playing=false;openLoading(()=>{const co=x.complete||Array(8).fill(0),up=x.upgrades||Array(6).fill(1);ex('restore_meta',x.stars,x.parts,...co,...up,x.elapsed);suitColor=x.color||suitColor;suitBrightness=x.brightness||100;beginLevel(x.planet,x.level,x.diff);ex('restore_position',x.x,x.y,x.hp,x.energy,x.stamina,x.jet);updateHUD()},'Recuperando partida guardada')})}
+function loadSlots(fromStart){if(!engine)loadedEngine();let content='<p>Elegí la partida que querés continuar.</p><div class="buttonGrid">';for(let i=1;i<=4;i++){const x=JSON.parse(localStorage.getItem('cosmic_cpp_save_'+i)||'null');content+=`<button data-load="${i}" ${x?'':'disabled'}>CASILLA ${i}<br><small>${x?names[x.planet]+' · Nivel '+x.level+' · '+x.saved:'VACÍA'}</small></button>`;}content+='</div>';dialog('RETORNAR A UNA PARTIDA',content);document.querySelectorAll('[data-load]').forEach(b=>b.onclick=()=>{const x=JSON.parse(localStorage.getItem('cosmic_cpp_save_'+b.dataset.load));if(!x)return;closeDialog();playing=false;openLoading(()=>{const co=x.complete||Array(8).fill(0),up=Array.from({length:7},(_,i)=>x.upgrades&&x.upgrades[i]!==undefined?x.upgrades[i]:1);ex('restore_meta',x.stars,x.parts,...co,...up,x.elapsed);suitColor=x.color||suitColor;suitBrightness=x.brightness||100;beginLevel(x.planet,x.level,x.diff);ex('restore_position',x.x,x.y,x.hp,x.energy,x.stamina,x.jet,x.suit!==undefined?x.suit:ex('hero_max_suit'));updateHUD()},'Recuperando partida guardada')})}
 on('savesBtn',()=>loadSlots(false));
-const UPGRADE_NAMES=['Fuerza','Vida','Inteligencia','Velocidad','Resistencia','Daño meteoritos'];
-const UPGRADE_ICONS=['⚔️','💚','🧠','➤','▣','☄️'];
+const UPGRADE_NAMES=['Fuerza','Vida','Inteligencia','Velocidad','Resistencia','Daño meteoritos','Traje'];
+const UPGRADE_ICONS=['⚔️','💚','🧠','➤','▣','☄️','🛡️'];
 function openUpgrades(){
   const available=ex('get_stars');
   const yellowEarned=names.filter((_,i)=>ex('get_completed',i)>=10).length;
