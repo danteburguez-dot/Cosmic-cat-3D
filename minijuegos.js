@@ -10,6 +10,7 @@ function saveMiniProfile(p){try{localStorage.setItem('cosmic_mini_v1',JSON.strin
 // ---------- Estado del minijuego ----------
 const M_GUN=[1,0,0,0,0,0,0]; // mejoras temporales del minijuego
 let miniState=null;
+let miniRenderer=null;
 
 function miniWorldSize(){return {w:3600,h:900};} // pasillo 3D: 3600 x 900
 
@@ -102,7 +103,7 @@ function startMiniSurvival(nivel){
 function beginMini(titulo){
   show('mini');
   $('miniTitle').textContent=titulo;
-  if(!window.__miniRenderer)__miniRenderer=new CosmicRenderer3D($('miniCanvas'),$('miniFx'));
+  if(!miniRenderer)miniRenderer=new CosmicRenderer3D($('miniCanvas'),$('miniFx'));
   miniState.running=true;
   miniLoop(performance.now());
 }
@@ -247,7 +248,7 @@ on('miniBtn',openMini);
 
 // ---------- Dibujo 3D del minijuego (pasillo + personajes) ----------
 function miniDraw(now){
-  const st=miniState,r=window.__miniRenderer;
+  const st=miniState,r=miniRenderer;
   const gl=r.gl;const hx=st.hero.x/75,hz=st.hero.y/75;
   const ratio=r.canvas.width/r.canvas.height;
   r.proj=CosmicRenderer3D.perspective(Math.PI/3,ratio,.2,150);
